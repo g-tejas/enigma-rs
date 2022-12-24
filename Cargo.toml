@@ -1,0 +1,16 @@
+[package]
+name = "enigma_machine"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+chrono = "0.4.23"
+csv = "1.1.6"
+eframe = "0.20.1"
+egui_dock = "0.3.1"
+egui_extras = "0.20.0"
+include-flate = { version="0.1.4", features=["stable"] }
+serde = "1.0.151"
+serde_derive = "1.0.151"

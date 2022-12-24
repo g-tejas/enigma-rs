@@ -1,0 +1,11 @@
+# Tabs
+- Candlestick plots
+- Portfolio tab
+- Microstructure browser (similar to Bahamas trading)
+- Watchlist Widget (https://alphaticks.io/#/alphaterm)
+- Depth Chart (https://alphaticks.io/#/alphaterm)
+- Trades (like AGGR)
+	- Exchange
+	- Price (color coded)
+	- Size (color coded based on size)
+	- Time
