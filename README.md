@@ -1,3 +1,11 @@
+# Things i'm currently working on
+- Implementing the websocket streaming. Right now im loading from the csv file every paint, which is a really bad idea
+Should follow the method discussed below and spawn a new thread which grabs the trades, and appends to the data.
+Use a VecDeque with a rolling window, popping off the older ones as more trades come in.
+Should refer to the data by self.data when plotting.
+For trades, use a custom VecDeque, for Line chart, use VecDeque<Value> where Value is from the egui library.
+For bar chart, use VecDeque<BoxPlot> or smth, but i think there's already a custom type for that. 
+
 # Tabs
 - Candlestick plots
 - Portfolio tab
