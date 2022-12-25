@@ -1,12 +1,11 @@
 use crate::colors;
 use crate::plot::candlestick_chart;
+use crate::utils;
+use crate::widgets::trades;
 use eframe::egui;
 use egui::plot::{Line, Plot, PlotPoints};
-use egui::{CentralPanel, FontData, FontDefinitions, Id, LayerId, TopBottomPanel, Ui, WidgetText};
+use egui::{CentralPanel, Id, LayerId, TopBottomPanel, Ui, WidgetText};
 use egui_dock::{DockArea, Node, NodeIndex, Style, StyleBuilder, TabViewer, Tree};
-
-use crate::widgets::trades;
-use include_flate::flate;
 use std::collections::HashSet;
 
 pub struct State {
@@ -84,34 +83,20 @@ pub struct Machine {
     pub tree: Tree<String>,
 }
 
-// use include_flate instead, more details in discord egui
-fn configure_fonts(ctx: &egui::Context) {
-    let mut fonts = FontDefinitions::default();
-    flate!(static FONT_DATA: [u8] from "resources/ProggyClean.ttf");
-    fonts
-        .font_data
-        .insert("ProggyClean".to_owned(), FontData::from_static(&FONT_DATA));
-    fonts
-        .families
-        .get_mut(&egui::FontFamily::Monospace)
-        .unwrap()
-        .insert(0, "ProggyClean".to_owned()); //.push("Helvetica".to_owned());
-    ctx.set_fonts(fonts);
-}
-
 impl Machine {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         #[allow(unused_mut)]
-        let mut test = Self::default();
+        let mut default = Self::default();
 
         #[cfg(feature = "persistence")]
         if let Some(storage) = cc.storage {
             if let Some(state) = eframe::get_value(storage, eframe::APP_KEY) {
-                test.state = state;
+                default.state = state;
             }
         }
-        configure_fonts(&cc.egui_ctx);
-        test
+
+        utils::configure_fonts(&cc.egui_ctx);
+        default
     }
 }
 
