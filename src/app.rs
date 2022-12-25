@@ -49,7 +49,6 @@ impl TabViewer for State {
 
 impl State {
     fn candlestick_chart(&mut self, ui: &mut Ui) {
-        ui.label("This is a candlestick_chart");
         candlestick_chart(ui);
     }
 

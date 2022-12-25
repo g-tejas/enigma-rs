@@ -7,7 +7,7 @@ use egui::{
     plot::{BoxElem, BoxPlot, BoxSpread, Line, Plot, PlotPoints},
     CentralPanel, Context, ScrollArea, Stroke, Ui, Window,
 };
-use serde_derive::Deserialize;
+use serde::Deserialize;
 use std::error::Error;
 use std::fs::File;
 
@@ -34,7 +34,7 @@ pub struct Chart {
     pub data: Vec<Candlestick>,
 }
 
-pub fn read_candlesticks(file_path: &str) -> Result<Vec<Candlestick>, Box<dyn Error>> {
+pub fn _read_candlesticks(file_path: &str) -> Result<Vec<Candlestick>, Box<dyn Error>> {
     let file = File::open(file_path)?;
     let mut reader = csv::Reader::from_reader(file);
     let mut candlesticks = Vec::new();
@@ -109,7 +109,7 @@ pub fn candlestick_chart(ui: &mut Ui) {
 
 impl Chart {
     pub fn new() -> Chart {
-        let candlesticks = read_candlesticks("btcusdt.csv").unwrap();
+        let candlesticks = _read_candlesticks("data/btcusdt.csv").unwrap();
         Chart { data: candlesticks }
     }
 }
