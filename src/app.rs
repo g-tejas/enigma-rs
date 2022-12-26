@@ -7,6 +7,8 @@ use egui::plot::{Line, Plot, PlotPoints};
 use egui::{CentralPanel, Id, LayerId, TopBottomPanel, Ui, WidgetText};
 use egui_dock::{DockArea, Node, NodeIndex, Style, StyleBuilder, TabViewer, Tree};
 use std::collections::HashSet;
+// use std::collections::VecDeque;
+use std::sync::{Arc, Mutex};
 
 pub struct State {
     // HashSet, so only unique widget names are stored.
@@ -14,6 +16,7 @@ pub struct State {
     // This is so we can have multiple orderbooks up at the same time
     pub open_tabs: HashSet<String>,
     pub style: Option<Style>,
+    pub bestbid: Arc<Mutex<f64>>,
 }
 
 impl TabViewer for State {
@@ -48,11 +51,15 @@ impl TabViewer for State {
 }
 
 impl State {
+    // The only things that should be stored here are styling / open_tabs related stuff
+    // since the things that can be accessed from self, are very limited. Or we can store the financial
+    // data here itself
     fn candlestick_chart(&mut self, ui: &mut Ui) {
         candlestick_chart(ui);
     }
 
     fn line_chart(&mut self, ui: &mut Ui) {
+        ui.label(format!("BTCUSDT = {}", self.bestbid.lock().unwrap()));
         let plot = Plot::new("Measurements");
         let sin: PlotPoints = (0..1000)
             .map(|i| {
@@ -80,6 +87,9 @@ impl State {
 pub struct Machine {
     pub state: State,
     pub tree: Tree<String>,
+    // pub timeseries: Arc<Mutex<VecDeque<[f64; 2]>>>,
+    // pub timeseries: Arc<Mutex<f64>>,
+    // pub data: FinancialData,
 }
 
 impl Machine {
@@ -116,11 +126,12 @@ impl Default for Machine {
                 }
             }
         }
+        let bestbid = Arc::new(Mutex::new(0.));
         let state = State {
             open_tabs,
             style: None,
+            bestbid,
         };
-
         Self { state, tree }
     }
 }
@@ -209,5 +220,6 @@ impl eframe::App for Machine {
                 )
                 .show_inside(&mut ui, &mut self.state);
         });
+        ctx.request_repaint();
     }
 }

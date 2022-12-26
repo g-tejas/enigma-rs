@@ -35,3 +35,7 @@ We can add notifications too using egui-notify.
 
 # Naming conventions
 https://rust-lang.github.io/api-guidelines/naming.html
+
+# Repos/Resources
+- [Egui navigation: basic centralpanel, layout stuff](https://github.com/mikael-nilsson-github/rust-egui-basic-navigation)
+- [Egui, to spawn separate thread for loading data](https://github.com/mikael-nilsson-github/egui-alpaca-crypto-trading)
