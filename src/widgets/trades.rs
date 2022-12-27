@@ -1,13 +1,12 @@
 use barter_data::model::PublicTrade;
 use barter_integration::model::Side;
 use chrono::{DateTime, Utc};
-// use csv;
 use eframe::egui;
 use egui::Ui;
+use egui_extras::{Column, TableBuilder};
 use serde::Deserialize;
 use std::collections::VecDeque;
-// use std::error::Error;
-// use std::fs::File;
+use std::f64::consts::PI;
 
 #[derive(Debug, Deserialize)]
 pub struct Trade {
@@ -20,37 +19,9 @@ pub struct Trade {
 }
 
 pub type Trades = VecDeque<PublicTrade>;
-// pub struct Trades {
-//     pub data: VecDeque<MarketEvent>,
-//     pub window_size: i64, // so we know where to cut off
-// }
-
-// impl Trades {
-//     pub fn new() -> Self {
-//         let data = read_trades().unwrap();
-//         let window_size = 100;
-//         Trades { data, window_size }
-//     }
-// }
-
-// pub fn read_trades() -> Result<VecDeque<Trade>, Box<dyn Error>> {
-//     let file = File::open("data/trades_min.csv")?;
-//     let mut reader = csv::Reader::from_reader(file);
-//     let mut trades = VecDeque::new();
-
-//     for result in reader.deserialize() {
-//         let trade: Trade = result?;
-//         trades.push_back(trade);
-//     }
-
-//     Ok(trades)
-// }
 
 pub fn show(ui: &mut Ui, trade_data: &mut Trades) {
     ui.separator();
-    use egui_extras::{Column, TableBuilder};
-    // store the data here
-    // let data = read_trades().unwrap();
 
     let table = TableBuilder::new(ui)
         .striped(true)
@@ -76,7 +47,7 @@ pub fn show(ui: &mut Ui, trade_data: &mut Trades) {
                 ui.strong("Price");
             });
             header.col(|ui| {
-                ui.strong("Size");
+                ui.strong("Quantity");
             });
             header.col(|ui| {
                 ui.strong("Time");
@@ -87,7 +58,7 @@ pub fn show(ui: &mut Ui, trade_data: &mut Trades) {
                 body.row(18.0, |mut row| {
                     row.col(|ui| {
                         let mut layout_job = egui::text::LayoutJob::default();
-                        let text = "coinbase pro";
+                        let text = "binance_futures_usd"; // need to change this to get from MarketEvent
                         layout_job.append(
                             &text,
                             0.0,
@@ -135,11 +106,12 @@ pub fn show(ui: &mut Ui, trade_data: &mut Trades) {
                                 font_id: egui::FontId::monospace(15.0),
                                 color: egui::Color32::WHITE,
                                 background: egui::Color32::from_rgba_unmultiplied(
-                                    255, 0,
-                                    // if trade.is_buyer_maker { 255 } else { 0 },
-                                    // if trade.is_buyer_maker { 0 } else { 255 },
+                                    if trade.side == Side::Buy { 255 } else { 0 },
+                                    if trade.side == Side::Buy { 0 } else { 255 },
                                     0,
-                                    0, //((trade.quantity * 125.0) as i32).try_into().unwrap(),
+                                    (255.0
+                                        * ((((trade.quantity / 100.) * 10.).atan() + PI / 2.) / PI))
+                                        .round() as u8,
                                 ),
                                 ..Default::default()
                             },

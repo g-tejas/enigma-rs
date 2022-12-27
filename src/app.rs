@@ -1,7 +1,7 @@
 use crate::colors;
 use crate::plot::candlestick_chart;
 use crate::utils;
-use crate::widgets::trades::{show, Trade, Trades};
+use crate::widgets::trades::{show, Trades};
 use barter_data::{
     builder::Streams,
     model::{subscription::SubKind, DataKind, MarketEvent},

@@ -23,14 +23,10 @@ fn main() {
     //     })
     // });
 
-    let app = Machine::default();
     let native_options = NativeOptions::default();
     run_native(
         defines::APP_NAME,
         native_options,
-        Box::new(|cc| {
-            utils::configure_fonts(&cc.egui_ctx);
-            Box::new(app)
-        }),
+        Box::new(|cc| Box::new(Machine::new(cc))),
     )
 }
