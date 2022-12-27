@@ -2,7 +2,9 @@
 
 ### Candlestick Plot
 [Code for creating the BoxElem's](https://github.com/SwayStar123/chart_bot/blob/master/src/chartbot.rs)
-Keep the BoxElem's in a VecDeque instead, so you can remove the older values, like a rolling window
+Keep the BoxElem's in a VecDeque instead, so you can remove the older values, like a rolling window.
+
+Follow this [tutorial](https://www.youtube.com/watch?v=zUvHkkkrmIY) for the sliding window.
 
 ### Trades
 Can take inspiration from [aggr](https://charts.aggr.trade/s3r1)

@@ -8,7 +8,14 @@ use egui::{CentralPanel, Id, LayerId, TopBottomPanel, Ui, WidgetText};
 use egui_dock::{DockArea, Node, NodeIndex, Style, StyleBuilder, TabViewer, Tree};
 use std::collections::HashSet;
 // use std::collections::VecDeque;
-use std::sync::{Arc, Mutex};
+use barter_data::{
+    builder::Streams,
+    model::{subscription::SubKind, DataKind, MarketEvent},
+    ExchangeId,
+};
+use barter_integration::model::InstrumentKind;
+use futures::StreamExt;
+use std::sync::mpsc::{Receiver, Sender};
 
 pub struct State {
     // HashSet, so only unique widget names are stored.
@@ -16,7 +23,10 @@ pub struct State {
     // This is so we can have multiple orderbooks up at the same time
     pub open_tabs: HashSet<String>,
     pub style: Option<Style>,
-    pub bestbid: Arc<Mutex<f64>>,
+    // pub bestbid: Arc<Mutex<f64>>,
+    pub bestbid: f64,
+    pub tx: Sender<f64>,
+    pub rx: Receiver<f64>,
 }
 
 impl TabViewer for State {
@@ -59,7 +69,26 @@ impl State {
     }
 
     fn line_chart(&mut self, ui: &mut Ui) {
-        ui.label(format!("BTCUSDT = {}", self.bestbid.lock().unwrap()));
+        // ui.label(format!("BTCUSDT = {}", self.bestbid.lock().unwrap()));
+        ui.label(format!("BTCUSDT = {}", self.bestbid));
+        // delete later
+        let mut ticker = String::new();
+        ui.add(egui::TextEdit::singleline(&mut ticker).hint_text("Write something here"));
+
+        egui::ComboBox::from_label("Select one!")
+            .selected_text(format!("{:?}", ticker))
+            .show_ui(ui, |ui| {
+                ui.label("BTC");
+                ui.label("ETH");
+            });
+
+        if ui.button("Connect").clicked() {
+            // match ticker {
+            //     Ticker::BTC => barter(self.tx.clone(), "btc".to_string()),
+            //     Ticker::ETH => barter(self.tx.clone(), "eth".to_string()),
+            // }
+            barter(self.tx.clone(), "eth".to_string());
+        }
         let plot = Plot::new("Measurements");
         let sin: PlotPoints = (0..1000)
             .map(|i| {
@@ -126,11 +155,16 @@ impl Default for Machine {
                 }
             }
         }
-        let bestbid = Arc::new(Mutex::new(0.));
+        // let bestbid = Arc::new(Mutex::new(0.));
+        let bestbid = 0.;
+        let (tx, rx) = std::sync::mpsc::channel();
+
         let state = State {
             open_tabs,
             style: None,
             bestbid,
+            tx,
+            rx,
         };
         Self { state, tree }
     }
@@ -143,6 +177,9 @@ impl eframe::App for Machine {
     }
 
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        if let Ok(bb) = self.state.rx.try_recv() {
+            self.state.bestbid = bb;
+        }
         TopBottomPanel::top("egui_dock::MenuBar").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
                 ui.menu_button("⚙", |ui| {
@@ -222,4 +259,35 @@ impl eframe::App for Machine {
         });
         ctx.request_repaint();
     }
+}
+
+// delete later
+fn barter(tx: Sender<f64>, ticker: String) {
+    tokio::spawn(async move {
+        loop {
+            let streams = Streams::builder()
+                .subscribe([(
+                    ExchangeId::BinanceFuturesUsd,
+                    ticker.as_str(),
+                    "usdt",
+                    InstrumentKind::FuturePerpetual,
+                    SubKind::Trade,
+                )])
+                .init()
+                .await
+                .unwrap();
+            let mut joined_stream = streams.join_map::<MarketEvent>().await;
+
+            while let Some((_exchange, event)) = joined_stream.next().await {
+                match event.kind {
+                    DataKind::Trade(trade) => {
+                        // *bestbid.lock().unwrap() = trade.price;
+                        println!("{}", trade.price);
+                        let _ = tx.send(trade.price);
+                    }
+                    _ => println!("Failed"),
+                }
+            }
+        }
+    });
 }
