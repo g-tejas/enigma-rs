@@ -184,10 +184,7 @@ impl eframe::App for Machine {
                 DataKind::Trade(trade) => {
                     println!("{:?}", trade);
                     self.state.trade_data.push_front(trade);
-                    if self.state.trade_data.len() == 10 {
-                        println!("size exceeded, truncating now");
-                        self.state.trade_data.truncate(10);
-                    }
+                    self.state.trade_data.truncate(10); // works!
                 }
                 _ => println!("Failed"),
             }

@@ -49,10 +49,6 @@ pub type Trades = VecDeque<PublicTrade>;
 pub fn show(ui: &mut Ui, trade_data: &mut Trades) {
     ui.separator();
     use egui_extras::{Column, TableBuilder};
-    if trade_data.len() == 10 {
-        println!("size exceeded, truncating now");
-        trade_data.truncate(10);
-    }
     // store the data here
     // let data = read_trades().unwrap();
 
