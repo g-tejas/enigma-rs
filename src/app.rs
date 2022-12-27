@@ -27,6 +27,7 @@ pub struct State {
     pub bestbid: f64,
     pub tx: Sender<f64>,
     pub rx: Receiver<f64>,
+    pub dark: bool,
 }
 
 impl TabViewer for State {
@@ -158,13 +159,14 @@ impl Default for Machine {
         // let bestbid = Arc::new(Mutex::new(0.));
         let bestbid = 0.;
         let (tx, rx) = std::sync::mpsc::channel();
-
+        let dark = true;
         let state = State {
             open_tabs,
             style: None,
             bestbid,
             tx,
             rx,
+            dark,
         };
         Self { state, tree }
     }
@@ -182,6 +184,9 @@ impl eframe::App for Machine {
         }
         TopBottomPanel::top("egui_dock::MenuBar").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
+                egui::widgets::global_dark_light_mode_switch(ui);
+
+                ui.separator();
                 ui.menu_button("⚙", |ui| {
                     if ui.button("Quit").clicked() {
                         _frame.close();

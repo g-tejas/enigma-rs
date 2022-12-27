@@ -21,9 +21,10 @@ cargo run
 ```
 
 ## 🛣️ Roadmap
-
-## 🔔 Notifications
+### 🔔 Notifications
 We can add notifications too using [egui-notify](https://github.com/ItsEthra/egui-notify).
+### Tabs
+[This](https://discord.com/channels/900275882684477440/904461220592119849/1012443669451776041) is what I mean.
 
 ## 📚 Resources / Other stuff
 - [Naming conventions](https://rust-lang.github.io/api-guidelines/naming.html)
