@@ -1,35 +1,30 @@
-use barter_data::model::PublicTrade;
+use barter_data::model::{DataKind, MarketEvent};
 use barter_integration::model::Side;
 use chrono::{DateTime, Utc};
 use eframe::egui;
 use egui::Ui;
 use egui_extras::{Column, TableBuilder};
-use serde::Deserialize;
 use std::collections::VecDeque;
-use std::f64::consts::PI;
 
-#[derive(Debug, Deserialize)]
-pub struct Trade {
-    pub id: i64,
-    pub price: f64,
-    pub qty: f64,
-    pub quote_qty: f64,
-    pub time: i64, // stored as a 13 digit epoch timestamp
-    pub is_buyer_maker: bool,
-}
-
-pub type Trades = VecDeque<PublicTrade>;
+pub type Trades = VecDeque<MarketEvent>;
 
 pub fn show(ui: &mut Ui, trade_data: &mut Trades) {
     ui.separator();
     let min = trade_data
         .iter()
-        .map(|trade| trade.quantity)
-        .fold(f64::INFINITY, f64::min);
+        .filter_map(|event| match &event.kind {
+            DataKind::Trade(trade) => Some(trade.quantity),
+            _ => None,
+        })
+        .fold(0.0, f64::min);
+
     let max = trade_data
         .iter()
-        .map(|trade| trade.quantity)
-        .fold(f64::NEG_INFINITY, f64::max);
+        .filter_map(|event| match &event.kind {
+            DataKind::Trade(trade) => Some(trade.quantity),
+            _ => None,
+        })
+        .fold(0.0, f64::max);
     let range = max - min;
 
     let table = TableBuilder::new(ui)
@@ -82,23 +77,16 @@ pub fn show(ui: &mut Ui, trade_data: &mut Trades) {
                     });
                     row.col(|ui| {
                         let mut layout_job = egui::text::LayoutJob::default();
-                        let text = trade.price.to_string();
+                        let text = get_price(trade).to_string();
                         layout_job.append(
                             &text,
                             0.0,
                             egui::text::TextFormat {
                                 font_id: egui::FontId::monospace(15.0),
-                                color: match trade.side {
-                                    Side::Buy => egui::Color32::RED,
-                                    Side::Sell => egui::Color32::GREEN,
+                                color: match get_side(trade) {
+                                    Side::Buy => egui::Color32::GREEN,
+                                    Side::Sell => egui::Color32::RED,
                                 },
-                                // color: if trade.is_buyer_maker {
-                                //     egui::Color32::RED
-                                // } else {
-                                //     egui::Color32::GREEN
-                                // },
-                                // background: egui::Color32::RED,
-                                // background: global::COLOR_RED_TRANSPARENT,
                                 ..Default::default()
                             },
                         );
@@ -107,7 +95,7 @@ pub fn show(ui: &mut Ui, trade_data: &mut Trades) {
                     });
                     row.col(|ui| {
                         let mut layout_job = egui::text::LayoutJob::default();
-                        let text = trade.quantity.to_string();
+                        let text = get_quantity(trade).to_string();
                         layout_job.append(
                             &text,
                             0.0,
@@ -115,13 +103,10 @@ pub fn show(ui: &mut Ui, trade_data: &mut Trades) {
                                 font_id: egui::FontId::monospace(15.0),
                                 color: egui::Color32::WHITE,
                                 background: egui::Color32::from_rgba_unmultiplied(
-                                    if trade.side == Side::Buy { 255 } else { 0 },
-                                    if trade.side == Side::Buy { 0 } else { 255 },
+                                    if get_side(trade) == Side::Buy { 0 } else { 255 },
+                                    if get_side(trade) == Side::Buy { 255 } else { 0 },
                                     0,
-                                    (((trade.quantity - min) / range) * 200.) as u8,
-                                    // (255.0
-                                    //     * ((((trade.quantity / 100.) * 10.).atan() + PI / 2.) / PI))
-                                    //     .round() as u8,
+                                    (((get_quantity(trade) - min) / range) * 200.) as u8,
                                 ),
                                 ..Default::default()
                             },
@@ -137,4 +122,25 @@ pub fn show(ui: &mut Ui, trade_data: &mut Trades) {
                 });
             }
         });
+}
+
+fn get_price(event: &MarketEvent) -> f64 {
+    match event.kind {
+        DataKind::Trade(ref trade) => trade.price,
+        _ => 0.0,
+    }
+}
+
+fn get_quantity(event: &MarketEvent) -> f64 {
+    match event.kind {
+        DataKind::Trade(ref trade) => trade.quantity,
+        _ => 0.0,
+    }
+}
+
+fn get_side(event: &MarketEvent) -> Side {
+    match event.kind {
+        DataKind::Trade(ref trade) => trade.side,
+        _ => Side::Buy,
+    }
 }

@@ -116,9 +116,6 @@ impl State {
 pub struct Machine {
     pub state: State,
     pub tree: Tree<String>,
-    // pub timeseries: Arc<Mutex<VecDeque<[f64; 2]>>>,
-    // pub timeseries: Arc<Mutex<f64>>,
-    // pub data: FinancialData,
 }
 
 impl Machine {
@@ -155,7 +152,6 @@ impl Default for Machine {
                 }
             }
         }
-        // let bestbid = Arc::new(Mutex::new(0.));
         let bestbid = 0.;
         let (tx, rx) = std::sync::mpsc::channel();
         let trade_data = Trades::new();
@@ -180,14 +176,15 @@ impl eframe::App for Machine {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // Here's where we receive data from transmitter
         if let Ok(event) = self.state.rx.try_recv() {
-            match event.kind {
-                DataKind::Trade(trade) => {
-                    println!("{:?}", trade);
-                    self.state.trade_data.push_front(trade);
-                    self.state.trade_data.truncate(50); // works!
-                }
-                _ => println!("Failed"),
-            }
+            self.state.trade_data.push_front(event);
+            // match event.kind {
+            //     DataKind::Trade(trade) => {
+            //         println!("{:?}", trade);
+            //         self.state.trade_data.push_front(trade);
+            //         self.state.trade_data.truncate(50); // works!
+            //     }
+            //     _ => println!("Failed"),
+            // }
             // self.state.bestbid = bb;
         }
         TopBottomPanel::top("egui_dock::MenuBar").show(ctx, |ui| {
@@ -294,14 +291,6 @@ fn barter(tx: Sender<MarketEvent>, ticker: String) {
 
             while let Some((_exchange, event)) = joined_stream.next().await {
                 let _result = tx.send(event);
-                // match event.kind {
-                //     DataKind::Trade(trade) => {
-                //         // *bestbid.lock().unwrap() = trade.price;
-                //         println!("{:?}", trade);
-                //         let _ = tx.send(trade);
-                //     }
-                //     _ => println!("Failed"),
-                // }
             }
         }
     });
