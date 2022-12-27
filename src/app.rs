@@ -184,7 +184,7 @@ impl eframe::App for Machine {
                 DataKind::Trade(trade) => {
                     println!("{:?}", trade);
                     self.state.trade_data.push_front(trade);
-                    self.state.trade_data.truncate(10); // works!
+                    self.state.trade_data.truncate(50); // works!
                 }
                 _ => println!("Failed"),
             }

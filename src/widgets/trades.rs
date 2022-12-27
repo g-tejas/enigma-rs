@@ -22,6 +22,15 @@ pub type Trades = VecDeque<PublicTrade>;
 
 pub fn show(ui: &mut Ui, trade_data: &mut Trades) {
     ui.separator();
+    let min = trade_data
+        .iter()
+        .map(|trade| trade.quantity)
+        .fold(f64::INFINITY, f64::min);
+    let max = trade_data
+        .iter()
+        .map(|trade| trade.quantity)
+        .fold(f64::NEG_INFINITY, f64::max);
+    let range = max - min;
 
     let table = TableBuilder::new(ui)
         .striped(true)
@@ -109,9 +118,10 @@ pub fn show(ui: &mut Ui, trade_data: &mut Trades) {
                                     if trade.side == Side::Buy { 255 } else { 0 },
                                     if trade.side == Side::Buy { 0 } else { 255 },
                                     0,
-                                    (255.0
-                                        * ((((trade.quantity / 100.) * 10.).atan() + PI / 2.) / PI))
-                                        .round() as u8,
+                                    (((trade.quantity - min) / range) * 200.) as u8,
+                                    // (255.0
+                                    //     * ((((trade.quantity / 100.) * 10.).atan() + PI / 2.) / PI))
+                                    //     .round() as u8,
                                 ),
                                 ..Default::default()
                             },
