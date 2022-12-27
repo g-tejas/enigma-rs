@@ -1,20 +1,19 @@
 use crate::colors;
 use crate::plot::candlestick_chart;
 use crate::utils;
-use crate::widgets::trades;
-use eframe::egui;
-use egui::plot::{Line, Plot, PlotPoints};
-use egui::{CentralPanel, Id, LayerId, TopBottomPanel, Ui, WidgetText};
-use egui_dock::{DockArea, Node, NodeIndex, Style, StyleBuilder, TabViewer, Tree};
-use std::collections::HashSet;
-// use std::collections::VecDeque;
+use crate::widgets::trades::{show, Trade, Trades};
 use barter_data::{
     builder::Streams,
     model::{subscription::SubKind, DataKind, MarketEvent},
     ExchangeId,
 };
 use barter_integration::model::InstrumentKind;
+use eframe::egui;
+use egui::plot::{Line, Plot, PlotPoints};
+use egui::{CentralPanel, Id, LayerId, TopBottomPanel, Ui, WidgetText};
+use egui_dock::{DockArea, Node, NodeIndex, Style, StyleBuilder, TabViewer, Tree};
 use futures::StreamExt;
+use std::collections::HashSet;
 use std::sync::mpsc::{Receiver, Sender};
 
 pub struct State {
@@ -25,9 +24,9 @@ pub struct State {
     pub style: Option<Style>,
     // pub bestbid: Arc<Mutex<f64>>,
     pub bestbid: f64,
-    pub tx: Sender<f64>,
-    pub rx: Receiver<f64>,
-    pub dark: bool,
+    pub tx: Sender<MarketEvent>,
+    pub rx: Receiver<MarketEvent>,
+    pub trade_data: Trades,
 }
 
 impl TabViewer for State {
@@ -38,7 +37,7 @@ impl TabViewer for State {
             "Welcome" => self.candlestick_chart(ui),
             "Portfolio" => self.line_chart(ui),
             "Machine Configuration" => self.machine_config(ui),
-            "Orderbook" => trades::show(ui),
+            "Orderbook" => show(ui, &mut self.trade_data), // from trades crate
             _ => {
                 ui.label(tab.as_str());
             }
@@ -104,12 +103,12 @@ impl State {
 
     fn machine_config(&mut self, ui: &mut Ui) {
         ui.heading("Machine Configuration");
-        let style = self.style.as_mut().unwrap();
+        // let style = self.style.as_mut().unwrap();
 
         ui.collapsing("Aesthetics", |ui| {
             ui.separator();
             ui.label("Edit shit here");
-            ui.checkbox(&mut style.tabs_are_draggable, "Tabs are draggable");
+            // ui.checkbox(&mut style.tabs_are_draggable, "Tabs are draggable");
         });
     }
 }
@@ -159,14 +158,14 @@ impl Default for Machine {
         // let bestbid = Arc::new(Mutex::new(0.));
         let bestbid = 0.;
         let (tx, rx) = std::sync::mpsc::channel();
-        let dark = true;
+        let trade_data = Trades::new();
         let state = State {
             open_tabs,
             style: None,
             bestbid,
             tx,
             rx,
-            dark,
+            trade_data,
         };
         Self { state, tree }
     }
@@ -179,8 +178,20 @@ impl eframe::App for Machine {
     }
 
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        if let Ok(bb) = self.state.rx.try_recv() {
-            self.state.bestbid = bb;
+        // Here's where we receive data from transmitter
+        if let Ok(event) = self.state.rx.try_recv() {
+            match event.kind {
+                DataKind::Trade(trade) => {
+                    println!("{:?}", trade);
+                    self.state.trade_data.push_front(trade);
+                    if self.state.trade_data.len() == 10 {
+                        println!("size exceeded, truncating now");
+                        self.state.trade_data.truncate(10);
+                    }
+                }
+                _ => println!("Failed"),
+            }
+            // self.state.bestbid = bb;
         }
         TopBottomPanel::top("egui_dock::MenuBar").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
@@ -225,6 +236,7 @@ impl eframe::App for Machine {
             ..Default::default()
         };
 
+        // Add the "workspaces feature here" > more deets in the README.md
         egui::TopBottomPanel::bottom("bottom_panel")
             .resizable(false)
             .frame(panel_config)
@@ -267,7 +279,7 @@ impl eframe::App for Machine {
 }
 
 // delete later
-fn barter(tx: Sender<f64>, ticker: String) {
+fn barter(tx: Sender<MarketEvent>, ticker: String) {
     tokio::spawn(async move {
         loop {
             let streams = Streams::builder()
@@ -284,14 +296,15 @@ fn barter(tx: Sender<f64>, ticker: String) {
             let mut joined_stream = streams.join_map::<MarketEvent>().await;
 
             while let Some((_exchange, event)) = joined_stream.next().await {
-                match event.kind {
-                    DataKind::Trade(trade) => {
-                        // *bestbid.lock().unwrap() = trade.price;
-                        println!("{}", trade.price);
-                        let _ = tx.send(trade.price);
-                    }
-                    _ => println!("Failed"),
-                }
+                let _result = tx.send(event);
+                // match event.kind {
+                //     DataKind::Trade(trade) => {
+                //         // *bestbid.lock().unwrap() = trade.price;
+                //         println!("{:?}", trade);
+                //         let _ = tx.send(trade);
+                //     }
+                //     _ => println!("Failed"),
+                // }
             }
         }
     });
