@@ -11,7 +11,9 @@ It's possible, you just have to run the async runtime off the main thread (becau
 [Example implementation](https://github.com/parasyte/egui-tokio-example/blob/main/src/main.rs)
 [Plotting time series using this method](https://github.com/mikael-nilsson-github/egui-alpaca-crypto-trading/blob/main/src/app.rs)
 
-26/12: Trying to figure how to do it via the MPSC method to make the program lock-free and run faster. We need to initialize the channel within Machine::default()
+`26/12`: Trying to figure how to do it via the MPSC method to make the program lock-free and run faster. We need to initialize the channel within Machine::default()
 
-27/12: Lock-free concurrency with `std::sync::mpsc` implemented. A new tokio runtime is initiated in the main fn and pressing the "Connect" button spawns a new thread that will run the websocket loop. It's also passed a tx, which is the transmitter. The channel is instantiated in Machine::default(). The websocket messages are passed to the rx, receiver that will be handled in the App::update() loop, with `try_recv` and update the data accordingly. 
+`27/12`: Lock-free concurrency with `std::sync::mpsc` implemented. A new tokio runtime is initiated in the main fn and pressing the "Connect" button spawns a new thread that will run the websocket loop. It's also passed a tx, which is the transmitter. The channel is instantiated in Machine::default(). The websocket messages are passed to the rx, receiver that will be handled in the App::update() loop, with `try_recv` and update the data accordingly. 
 Plan is to append to a VecDeque<BoxElem> or something.
+
+`28/12`: parasyte replied to my issue [here](https://github.com/parasyte/egui-tokio-example/issues/1). Basically, he suggested that in order to stop the spawned threads, u can simply pass in a "stop event" channel, that will listen for stop events. But leave this to the end, because, it's very unlikely we will hit any sort of performance issue this early. 
