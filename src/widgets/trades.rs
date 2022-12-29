@@ -1,14 +1,34 @@
 use barter_data::model::{DataKind, MarketEvent};
+use barter_data::{builder::Streams, model::subscription::SubKind, ExchangeId};
+use barter_integration::model::InstrumentKind;
 use barter_integration::model::Side;
 use chrono::{DateTime, Utc};
 use eframe::egui;
 use egui::Ui;
 use egui_extras::{Column, TableBuilder};
+use futures::StreamExt;
 use std::collections::VecDeque;
+use std::sync::mpsc::Sender;
 
 pub type Trades = VecDeque<MarketEvent>;
 
-pub fn show(ui: &mut Ui, trade_data: &mut Trades) {
+pub fn show(ui: &mut Ui, trade_data: &mut Trades, tx: Sender<MarketEvent>) {
+    ui.separator();
+    ui.horizontal(|ui| {
+        if ui.button("Connect").clicked() {
+            // match ticker {
+            //     Ticker::BTC => barter(self.tx.clone(), "btc".to_string()),
+            //     Ticker::ETH => barter(self.tx.clone(), "eth".to_string()),
+            // }
+            barter(tx, "eth".to_string());
+        }
+        if ui.button("Open window").clicked() {
+            egui::Window::new("Hello").show(ui.ctx(), |ui| {
+                ui.label("Hgello wrold");
+            });
+        }
+    });
+
     ui.separator();
     let min = trade_data
         .iter()
@@ -143,4 +163,27 @@ fn get_side(event: &MarketEvent) -> Side {
         DataKind::Trade(ref trade) => trade.side,
         _ => Side::Buy,
     }
+}
+
+fn barter(tx: Sender<MarketEvent>, ticker: String) {
+    tokio::spawn(async move {
+        loop {
+            let streams = Streams::builder()
+                .subscribe([(
+                    ExchangeId::BinanceFuturesUsd,
+                    ticker.as_str(),
+                    "usdt",
+                    InstrumentKind::FuturePerpetual,
+                    SubKind::Trade,
+                )])
+                .init()
+                .await
+                .unwrap();
+            let mut joined_stream = streams.join_map::<MarketEvent>().await;
+
+            while let Some((_exchange, event)) = joined_stream.next().await {
+                let _result = tx.send(event);
+            }
+        }
+    });
 }
