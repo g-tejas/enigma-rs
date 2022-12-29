@@ -4,7 +4,7 @@ use crate::utils;
 use crate::widgets::trades::{show, Trades};
 use barter_data::{
     builder::Streams,
-    model::{subscription::SubKind, DataKind, MarketEvent},
+    model::{subscription::SubKind, MarketEvent},
     ExchangeId,
 };
 use barter_integration::model::InstrumentKind;
@@ -37,7 +37,7 @@ impl TabViewer for State {
             "Welcome" => self.candlestick_chart(ui),
             "Portfolio" => self.line_chart(ui),
             "Machine Configuration" => self.machine_config(ui),
-            "Orderbook" => show(ui, &mut self.trade_data), // from trades crate
+            "Orderbook" => show(ui, &mut self.trade_data, self.tx.clone()), // from trades crate
             _ => {
                 ui.label(tab.as_str());
             }
@@ -173,10 +173,11 @@ impl eframe::App for Machine {
         eframe::set_value(storage, eframe::APP_KEY, &self.state);
     }
 
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         // Here's where we receive data from transmitter
         if let Ok(event) = self.state.rx.try_recv() {
             self.state.trade_data.push_front(event);
+            self.state.trade_data.truncate(50);
             // match event.kind {
             //     DataKind::Trade(trade) => {
             //         println!("{:?}", trade);
@@ -194,7 +195,7 @@ impl eframe::App for Machine {
                 ui.separator();
                 ui.menu_button("⚙", |ui| {
                     if ui.button("Quit").clicked() {
-                        _frame.close();
+                        frame.close();
                     }
                 });
 
@@ -221,7 +222,16 @@ impl eframe::App for Machine {
                     //     // ui.selectable_label(self.context.open_tabs.contains(*tab), *tab);
                     // }
                     ui.label("This is where we will add the various tabs");
-                })
+                });
+                // let style = match self.state.style.as_mut() {
+                //     Some(style) => {
+                //         ui.menu_button("View", |ui| {
+                //             ui.checkbox(&mut style.tabs_are_draggable, "Tabs are draggable");
+                //         });
+                //     }
+                //     None => println!("failed"),
+                // };
+                // self.state.style.as_mut().unwrap();
             })
         });
 
@@ -267,6 +277,7 @@ impl eframe::App for Machine {
                         .build(),
                 )
                 .show_inside(&mut ui, &mut self.state);
+            // .show(ctx, &mut self.state);
         });
         ctx.request_repaint();
     }
