@@ -1,11 +1,12 @@
 mod app;
-mod colors;
 mod defines;
+mod gateway;
 mod plot;
 mod utils;
 mod widgets;
 use app::Machine;
 use eframe::{run_native, NativeOptions};
+use std::time::Duration;
 use tokio::runtime::Runtime;
 
 fn main() {
@@ -13,15 +14,14 @@ fn main() {
     // Enter the runtime so that `tokio::spawn` is available immediately.
     let _enter = rt.enter();
 
-    // Problem: What if i have a creation context, how do i access the state then?
-    // Do we even need this
-    // std::thread::spawn(move || {
-    //     rt.block_on(async {
-    //         loop {
-    //             tokio::time::sleep(Duration::from_secs(3600)).await;
-    //         }
-    //     })
-    // });
+    // This block is necessary to keep the runtime running
+    std::thread::spawn(move || {
+        rt.block_on(async {
+            loop {
+                tokio::time::sleep(Duration::from_secs(3600)).await;
+            }
+        })
+    });
 
     let native_options = NativeOptions::default();
     run_native(
