@@ -15,7 +15,6 @@ egui_dock = "0.3.1"
 egui_extras = "0.20.0"
 futures = "0.3.25"
 include-flate = { version="0.1.4", features=["stable"] }
-rand = "0.8.5"
 serde = "1.0.151"
 serde_derive = "1.0.151"
 serde_json = "1.0.91"
