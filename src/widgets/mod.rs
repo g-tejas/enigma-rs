@@ -1,4 +1,5 @@
 pub mod aggr_trades;
+pub mod chart;
 use barter_data::model::MarketEvent;
 use std::collections::VecDeque;
 use std::sync::mpsc::Sender;
@@ -14,7 +15,7 @@ pub trait Widget {
     fn show(
         &mut self,
         ui: &mut eframe::egui::Ui,
-        trade_data: &mut VecDeque<MarketEvent>,
+        events: &mut VecDeque<MarketEvent>,
         tx: Sender<MarketEvent>,
     );
 }

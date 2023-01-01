@@ -1,5 +1,4 @@
 use crate::utils::get_trade;
-use crate::widgets::Widget;
 use barter_data::model::{DataKind, MarketEvent};
 use barter_integration::model::Side;
 use chrono::{DateTime, Utc};
@@ -10,15 +9,19 @@ use std::sync::mpsc::Sender;
 
 pub struct AggrTrades {
     pub filter: i32,
+    pub show: bool,
 }
 
 impl Default for AggrTrades {
     fn default() -> Self {
-        Self { filter: 10 }
+        Self {
+            filter: 10,
+            show: true,
+        }
     }
 }
 
-impl Widget for AggrTrades {
+impl super::Widget for AggrTrades {
     fn name(&self) -> &'static str {
         "💸 Aggregated Trades"
     }
@@ -30,24 +33,31 @@ impl Widget for AggrTrades {
         tx: Sender<MarketEvent>,
     ) {
         // Destructure the self into their fields.
-        let Self { filter } = self;
+        let Self { filter, show } = self;
 
         // Menu bar for configuring settings
         ui.horizontal(|ui| {
-            ui.menu_button("📈 Add Ticker", |ui| {
-                for exchange in vec!["Binance", "Okx", "Kraken", "Coinbase"] {
-                    ui.menu_button(exchange, |ui| {
-                        let mut my_bool = false;
-                        // ui.add(toggle(&mut my_bool));
-                        ui.checkbox(&mut my_bool, "BTC-USDT");
-                    });
-                }
-            });
+            // ui.menu_button("📈 Add Ticker", |ui| {
+            //     for exchange in vec!["Binance", "Okx", "Kraken", "Coinbase"] {
+            //         ui.menu_button(exchange, |ui| {
+            //             let mut my_bool = false;
+            //             // ui.add(toggle(&mut my_bool));
+            //             ui.checkbox(&mut my_bool, "BTC-USDT");
+            //         });
+            //     }
+            // });
+            if ui.selectable_label(*show, "📈 Add Ticker").clicked() {
+                *show = !*show;
+            }
+            if *show {
+                egui::Window::new("Hello").show(ui.ctx(), |ui| {
+                    ui.label("Hgello world");
+                });
+            }
             if ui.button("Connect").clicked() {
                 println!("Connected to ticker feed");
-                crate::gateway::add_trades(tx, "BTC-USDT".to_string());
+                crate::gateway::add_trades(tx, "BTC-USDT");
             }
-            ui.label(format!("current filter size: {}", filter));
             ui.add(egui::Slider::new(filter, 0..=100).text("Size"));
         });
 
@@ -108,68 +118,70 @@ impl Widget for AggrTrades {
             })
             .body(|mut body| {
                 for event in events {
-                    let trade = get_trade(event.clone());
-                    body.row(text_height, |mut row| {
-                        row.col(|ui| {
-                            let mut layout_job = egui::text::LayoutJob::default();
-                            let text = "binance_futures_usd"; // need to change this to get from MarketEvent
-                            layout_job.append(
-                                &text,
-                                0.0,
-                                egui::text::TextFormat {
-                                    font_id: egui::FontId::monospace(15.0),
-                                    color: egui::Color32::WHITE,
-                                    ..Default::default()
-                                },
-                            );
-
-                            ui.label(layout_job);
-                        });
-                        row.col(|ui| {
-                            let mut layout_job = egui::text::LayoutJob::default();
-                            let text = trade.price.to_string();
-                            layout_job.append(
-                                &text,
-                                0.0,
-                                egui::text::TextFormat {
-                                    font_id: egui::FontId::monospace(15.0),
-                                    color: match trade.side {
-                                        Side::Buy => egui::Color32::GREEN,
-                                        Side::Sell => egui::Color32::RED,
+                    let trade = get_trade(event.clone()).unwrap();
+                    if trade.quantity * trade.price > (*filter * 200).into() {
+                        body.row(text_height, |mut row| {
+                            row.col(|ui| {
+                                let mut layout_job = egui::text::LayoutJob::default();
+                                let text = "binance_futures_usd"; // need to change this to get from MarketEvent
+                                layout_job.append(
+                                    &text,
+                                    0.0,
+                                    egui::text::TextFormat {
+                                        font_id: egui::FontId::monospace(15.0),
+                                        color: egui::Color32::WHITE,
+                                        ..Default::default()
                                     },
-                                    ..Default::default()
-                                },
-                            );
+                                );
 
-                            ui.label(layout_job);
+                                ui.label(layout_job);
+                            });
+                            row.col(|ui| {
+                                let mut layout_job = egui::text::LayoutJob::default();
+                                let text = trade.price.to_string();
+                                layout_job.append(
+                                    &text,
+                                    0.0,
+                                    egui::text::TextFormat {
+                                        font_id: egui::FontId::monospace(15.0),
+                                        color: match trade.side {
+                                            Side::Buy => egui::Color32::GREEN,
+                                            Side::Sell => egui::Color32::RED,
+                                        },
+                                        ..Default::default()
+                                    },
+                                );
+
+                                ui.label(layout_job);
+                            });
+                            row.col(|ui| {
+                                let mut layout_job = egui::text::LayoutJob::default();
+                                let text = trade.quantity.to_string();
+                                layout_job.append(
+                                    &text,
+                                    0.0,
+                                    egui::text::TextFormat {
+                                        font_id: egui::FontId::monospace(15.0),
+                                        color: egui::Color32::WHITE,
+                                        background: egui::Color32::from_rgba_unmultiplied(
+                                            if trade.side == Side::Buy { 0 } else { 255 },
+                                            if trade.side == Side::Buy { 255 } else { 0 },
+                                            0,
+                                            (((trade.quantity - min) / range) * 200.) as u8,
+                                        ),
+                                        ..Default::default()
+                                    },
+                                );
+                                ui.label(layout_job);
+                            });
+                            row.col(|ui| {
+                                // ui.label(RichText::new("ProggyClean").)
+                                let now: DateTime<Utc> = Utc::now();
+                                let timestamp = now.format("%Y-%m-%d %H:%M:%S").to_string();
+                                ui.monospace(timestamp);
+                            });
                         });
-                        row.col(|ui| {
-                            let mut layout_job = egui::text::LayoutJob::default();
-                            let text = trade.quantity.to_string();
-                            layout_job.append(
-                                &text,
-                                0.0,
-                                egui::text::TextFormat {
-                                    font_id: egui::FontId::monospace(15.0),
-                                    color: egui::Color32::WHITE,
-                                    background: egui::Color32::from_rgba_unmultiplied(
-                                        if trade.side == Side::Buy { 0 } else { 255 },
-                                        if trade.side == Side::Buy { 255 } else { 0 },
-                                        0,
-                                        (((trade.quantity - min) / range) * 200.) as u8,
-                                    ),
-                                    ..Default::default()
-                                },
-                            );
-                            ui.label(layout_job);
-                        });
-                        row.col(|ui| {
-                            // ui.label(RichText::new("ProggyClean").)
-                            let now: DateTime<Utc> = Utc::now();
-                            let timestamp = now.format("%Y-%m-%d %H:%M:%S").to_string();
-                            ui.monospace(timestamp);
-                        });
-                    });
+                    }
                 }
             });
     }
