@@ -48,8 +48,8 @@ pub fn _read_candlesticks(file_path: &str) -> Result<Vec<Candlestick>, Box<dyn E
 }
 
 pub fn candlestick_chart(ui: &mut Ui) {
-    let red = Color32::from_rgb(255, 0, 0);
-    let green = Color32::from_rgb(0, 255, 0);
+    let red = Color32::RED;
+    let green = Color32::GREEN;
     let data = BoxPlot::new(vec![
         BoxElem::new(1.0, BoxSpread::new(1.5, 2.2, 2.2, 2.6, 3.1))
             .whisker_width(0.0)
