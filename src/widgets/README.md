@@ -4,9 +4,12 @@
 [Code for creating the BoxElem's](https://github.com/SwayStar123/chart_bot/blob/master/src/chartbot.rs)
 Keep the BoxElem's in a VecDeque instead, so you can remove the older values, like a rolling window.
 
+01/01 Idea: Can use the [drag and drop crate](https://github.com/lucasmerlin/egui_dnd) for time series.
+So for example, if I want to move one time series from this chart to another.
+
 Follow this [tutorial](https://www.youtube.com/watch?v=zUvHkkkrmIY) for the sliding window.
 
-### Trades
+### Aggregated Trades
 Can take inspiration from [aggr](https://charts.aggr.trade/s3r1)
 Add a slider for size, combobox for ticker, connect button, checkbox for which exchanges you want to listen to.
 Columns: 
@@ -28,6 +31,10 @@ Same stuff as trades I guess.
 
 ### Portfolio
 
+
+### Monitor our own trades
+https://twitter.com/i/status/1571862452656128001
+Something like the link above.
 
 ### Microstructure Browser
 Leave this to the last. A major problem is performance, which is why we need to implement striding. As mentioned by BahamasTrading [here](https://twitter.com/BahamasTrading/status/1377351224748605442), we need to upsample/downsample based on how zoomed in you are. egui hasn't implemented this yet, implot has though, so we need to implement it in rust.
