@@ -1,24 +1,34 @@
+use crate::defines::{Candle, Liquidation, Trade};
 use crate::{plot::candlestick_chart, utils, widgets::Widget};
-use barter_data::model::MarketEvent;
+use barter_data::model::{DataKind, MarketEvent, OrderBook};
+use chrono::Duration;
 use eframe::egui;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::mpsc::{Receiver, Sender};
 
+// HashSet, so only unique widget names are stored.
+// TODO: Add unique identifier to widget names OrderBook::spot::BTCUSD for example.
+// This is so we can have multiple orderbooks up at the same time
 #[allow(dead_code)]
 pub struct State<'a> {
-    // HashSet, so only unique widget names are stored.
-    // TODO: Add unique identifier to widget names OrderBook::spot::BTCUSD for example.
-    // This is so we can have multiple orderbooks up at the same time
     // Style-related fields
     open_tabs: HashSet<String>,
     style: Option<egui_dock::Style>,
     lock_layout: bool,
 
-    // Lock-free!
+    // Lock-free! Channel
     tx: Sender<MarketEvent>,
     rx: Receiver<MarketEvent>,
+
+    // Data
     events: VecDeque<MarketEvent>,
+
+    // Widgets
     gizmos: HashMap<&'a str, Box<dyn Widget>>, // Vector of pointers to a trait value Widget, might change to Hashmap
+    trades: VecDeque<Trade>,
+    candles: VecDeque<Candle>,
+    orderbooks: VecDeque<OrderBook>,
+    liquidations: VecDeque<Liquidation>,
 }
 
 impl egui_dock::TabViewer for State<'_> {
@@ -32,13 +42,23 @@ impl egui_dock::TabViewer for State<'_> {
                     // it has to be get_mut() not get() because get() returns a & ref not a &mut
                     .get_mut("Chart")
                     .unwrap()
-                    .show(ui, &mut self.events, self.tx.clone())
+                    .show(
+                        ui,
+                        self.tx.clone(),
+                        &mut self.trades,
+                        &mut self.candles,
+                        &mut self.orderbooks,
+                        &mut self.liquidations,
+                    )
             }
             "Machine Configuration" => self.machine_config(ui),
             "Orderbook" => self.gizmos.get_mut("💸 Aggregated Trades").unwrap().show(
                 ui,
-                &mut self.events,
                 self.tx.clone(),
+                &mut self.trades,
+                &mut self.candles,
+                &mut self.orderbooks,
+                &mut self.liquidations,
             ),
             _ => {
                 ui.label(tab.as_str());
@@ -90,6 +110,7 @@ impl State<'_> {
 pub struct Machine<'a> {
     state: State<'a>,
     tree: egui_dock::Tree<String>,
+    ping: Duration,
 }
 
 impl Machine<'_> {
@@ -138,7 +159,9 @@ impl Default for Machine<'_> {
         let aggr_trades_widget: Box<dyn Widget> =
             Box::new(crate::widgets::aggr_trades::AggrTrades::default());
         let chart_widget: Box<dyn Widget> = Box::new(crate::widgets::chart::Chart::default());
+
         let mut gizmos: HashMap<&str, Box<dyn Widget>> = HashMap::new();
+
         gizmos.insert(aggr_trades_widget.name(), aggr_trades_widget);
         gizmos.insert(chart_widget.name(), chart_widget);
 
@@ -150,8 +173,15 @@ impl Default for Machine<'_> {
             rx,
             events: VecDeque::new(),
             gizmos,
+            trades: VecDeque::new(),
+            candles: VecDeque::new(),
+            orderbooks: VecDeque::new(),
+            liquidations: VecDeque::new(),
         };
-        Self { state, tree }
+
+        let ping = Duration::zero();
+
+        Self { state, tree, ping }
     }
 }
 
@@ -164,8 +194,59 @@ impl eframe::App for Machine<'_> {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         // Here's where we receive data from transmitter
         if let Ok(event) = self.state.rx.try_recv() {
-            self.state.events.push_front(event);
-            self.state.events.truncate(50);
+            // Grab the data before heading into the match arm
+            let exchange_time = event.exchange_time;
+            let received_time = event.received_time;
+            let ping = received_time - exchange_time;
+            self.ping = ping;
+            let exchange = format!("{}", event.exchange);
+            let ticker = format!("{}-{}", event.instrument.base, event.instrument.quote);
+            let instrument_type = event.instrument.kind;
+
+            match event.kind {
+                DataKind::Trade(trade) => {
+                    self.state.trades.push_front(Trade {
+                        exchange_time,
+                        exchange,
+                        ticker,
+                        instrument_type,
+                        price: trade.price,
+                        quantity: trade.quantity,
+                        side: trade.side,
+                    });
+                }
+                DataKind::Candle(candle) => {
+                    self.state.candles.push_front(Candle {
+                        exchange,
+                        ticker,
+                        instrument_type,
+                        start_time: candle.start_time,
+                        end_time: candle.end_time,
+                        open: candle.open,
+                        high: candle.high,
+                        low: candle.low,
+                        close: candle.close,
+                        volume: candle.volume,
+                        trade_count: candle.trade_count,
+                    });
+                }
+                DataKind::OrderBook(orderbook) => {
+                    self.state.orderbooks.push_front(orderbook);
+                }
+                DataKind::Liquidation(liquidation) => {
+                    self.state.liquidations.push_front(Liquidation {
+                        exchange,
+                        ticker,
+                        instrument_type,
+                        side: liquidation.side,
+                        price: liquidation.price,
+                        quantity: liquidation.quantity,
+                        time: liquidation.time,
+                    });
+                }
+            };
+            // self.state.events.push_front(event);
+            self.state.trades.truncate(50);
         }
 
         // Menu bar
@@ -230,6 +311,7 @@ impl eframe::App for Machine<'_> {
                         self.state.lock_layout = !self.state.lock_layout;
                         println!("locked");
                     }
+                    ui.label(format!("{} ping", self.ping));
                 });
             });
 
