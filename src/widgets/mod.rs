@@ -25,4 +25,6 @@ pub trait Widget {
         orderbooks: &mut VecDeque<OrderBook>,
         liquidations: &mut VecDeque<Liquidation>,
     );
+
+    fn context_menu(&self, ui: &mut egui::Ui);
 }

@@ -1,8 +1,8 @@
-use std::collections::VecDeque;
-use std::sync::mpsc::Sender;
+use crate::defines::*;
 use barter_data::model::{MarketEvent, OrderBook};
 use eframe::egui::Ui;
-use crate::defines::*;
+use std::collections::VecDeque;
+use std::sync::mpsc::Sender;
 
 pub struct Settings {
     pub api_key: String,
@@ -19,10 +19,23 @@ impl Default for Settings {
 }
 
 impl super::Widget for Settings {
-    fn name(&self) -> &'static str { SETTINGS_TITLE }
+    fn name(&self) -> &'static str {
+        SETTINGS_TITLE
+    }
 
-    fn show(&mut self, ui: &mut Ui, tx: Sender<MarketEvent>, trades: &mut VecDeque<Trade>, candles: &mut VecDeque<Candle>, orderbooks: &mut VecDeque<OrderBook>, liquidations: &mut VecDeque<Liquidation>) {
-        let Self { api_key, api_secret } = self;
+    fn show(
+        &mut self,
+        ui: &mut Ui,
+        tx: Sender<MarketEvent>,
+        trades: &mut VecDeque<Trade>,
+        candles: &mut VecDeque<Candle>,
+        orderbooks: &mut VecDeque<OrderBook>,
+        liquidations: &mut VecDeque<Liquidation>,
+    ) {
+        let Self {
+            api_key,
+            api_secret,
+        } = self;
         ui.heading("Enigma Machine Configuration");
         ui.separator();
 
@@ -35,12 +48,16 @@ impl super::Widget for Settings {
                 ui.monospace("API Secret:");
                 ui.text_edit_singleline(api_secret);
             });
-    });
+        });
         ui.separator();
 
         ui.collapsing("Aesthetics", |ui| {
             ui.label("Edit shit here");
             // ui.checkbox(&mut style.tabs_are_draggable, "Tabs are draggable");
         });
+    }
+
+    fn context_menu(&self, ui: &mut Ui) {
+        ui.label("from settings");
     }
 }
