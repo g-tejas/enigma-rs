@@ -1,5 +1,8 @@
 use crate::defines::*;
-use crate::{utils, widgets::{self, Widget}};
+use crate::{
+    utils,
+    widgets::{self, Widget},
+};
 use barter_data::model::{DataKind, MarketEvent, OrderBook};
 use chrono::Duration;
 use eframe::egui;
@@ -24,7 +27,8 @@ pub struct State<'a> {
     events: VecDeque<MarketEvent>,
 
     // Widgets
-    gizmos: HashMap<&'a str, Box<dyn Widget>>, // Vector of pointers to a trait value Widget, might change to Hashmap
+    gizmos: HashMap<&'a str, Box<dyn Widget>>,
+    // Vector of pointers to a trait value Widget, might change to Hashmap
     trades: VecDeque<Trade>,
     candles: VecDeque<Candle>,
     orderbooks: VecDeque<OrderBook>,
@@ -37,12 +41,17 @@ impl egui_dock::TabViewer for State<'_> {
     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {
         // let final_result = self.gizmos.get_mut(tab.as_str());
         match self.gizmos.get_mut(tab.as_str()) {
-            Some(widget) => {
-                widget.show(ui, self.tx.clone(), &mut self.trades, &mut self.candles, &mut self.orderbooks, &mut self.liquidations)
-            },
+            Some(widget) => widget.show(
+                ui,
+                self.tx.clone(),
+                &mut self.trades,
+                &mut self.candles,
+                &mut self.orderbooks,
+                &mut self.liquidations,
+            ),
             _ => {
                 ui.heading("NO WIDGET FOUND");
-            },
+            }
         }
     }
 
@@ -97,10 +106,8 @@ impl Machine<'_> {
 impl Default for Machine<'_> {
     // Default Layout
     fn default() -> Self {
-        let mut tree = egui_dock::Tree::new(vec![
-            CHART_TITLE.to_owned(),
-            SETTINGS_TITLE.to_owned(),
-        ]);
+        let mut tree =
+            egui_dock::Tree::new(vec![CHART_TITLE.to_owned(), SETTINGS_TITLE.to_owned()]);
         let [a, _b] = tree.split_left(
             egui_dock::NodeIndex::root(),
             0.4,
@@ -120,7 +127,8 @@ impl Default for Machine<'_> {
         let (tx, rx) = std::sync::mpsc::channel();
 
         // Create a Hashmap of widgets
-        let aggr_trades_widget: Box<dyn Widget> = Box::new(widgets::aggr_trades::AggrTrades::default());
+        let aggr_trades_widget: Box<dyn Widget> =
+            Box::new(widgets::aggr_trades::AggrTrades::default());
         let chart_widget: Box<dyn Widget> = Box::new(widgets::chart::Chart::default());
         let settings_widget: Box<dyn Widget> = Box::new(widgets::settings::Settings::default());
 
@@ -143,7 +151,11 @@ impl Default for Machine<'_> {
             liquidations: VecDeque::new(),
         };
 
-        Self { state, tree, ping: 0 }
+        Self {
+            state,
+            tree,
+            ping: 0,
+        }
     }
 }
 

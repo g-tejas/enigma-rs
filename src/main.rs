@@ -1,12 +1,12 @@
+use app::Machine;
+use eframe::{run_native, NativeOptions};
+use std::time::Duration;
+use tokio::runtime::Runtime;
 mod app;
 mod defines;
 mod gateway;
 mod utils;
 mod widgets;
-use app::Machine;
-use eframe::{run_native, NativeOptions};
-use std::time::Duration;
-use tokio::runtime::Runtime;
 
 fn main() {
     let rt = Runtime::new().expect("Unable to create Runtime");
