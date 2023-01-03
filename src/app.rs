@@ -1,5 +1,5 @@
-use crate::defines::{Candle, Liquidation, Trade};
-use crate::{plot::candlestick_chart, utils, widgets::Widget};
+use crate::defines::*;
+use crate::{utils, widgets::{self, Widget}};
 use barter_data::model::{DataKind, MarketEvent, OrderBook};
 use chrono::Duration;
 use eframe::egui;
@@ -35,42 +35,23 @@ impl egui_dock::TabViewer for State<'_> {
     type Tab = String;
 
     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {
-        match tab.as_str() {
-            "Welcome" => self.candlestick_chart(ui),
-            "Portfolio" => {
-                self.gizmos
-                    // it has to be get_mut() not get() because get() returns a & ref not a &mut
-                    .get_mut("Chart")
-                    .unwrap()
-                    .show(
-                        ui,
-                        self.tx.clone(),
-                        &mut self.trades,
-                        &mut self.candles,
-                        &mut self.orderbooks,
-                        &mut self.liquidations,
-                    )
-            }
-            "Machine Configuration" => self.machine_config(ui),
-            "Orderbook" => self.gizmos.get_mut("💸 Aggregated Trades").unwrap().show(
-                ui,
-                self.tx.clone(),
-                &mut self.trades,
-                &mut self.candles,
-                &mut self.orderbooks,
-                &mut self.liquidations,
-            ),
+        // let final_result = self.gizmos.get_mut(tab.as_str());
+        match self.gizmos.get_mut(tab.as_str()) {
+            Some(widget) => {
+                widget.show(ui, self.tx.clone(), &mut self.trades, &mut self.candles, &mut self.orderbooks, &mut self.liquidations)
+            },
             _ => {
-                ui.label(tab.as_str());
-            }
+                ui.heading("NO WIDGET FOUND");
+            },
         }
     }
 
     // when you right click a tab
     fn context_menu(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {
         match tab.as_str() {
-            "Orderbook" => ui.label("We gon add some fancy shit here"),
-            _ => ui.label("helo"),
+            "Orderbook" => ui.label("You are pressing this from the orderbook widget"),
+            SETTINGS_TITLE => ui.label("You are pressing this from the settings widget"),
+            _ => ui.label("Hello"),
         };
     }
 
@@ -84,33 +65,16 @@ impl egui_dock::TabViewer for State<'_> {
     }
 }
 
-impl State<'_> {
-    // The only things that should be stored here are styling / open_tabs related stuff
-    // since the things that can be accessed from self, are very limited. Or we can store the financial
-    // data here itself
-    fn candlestick_chart(&mut self, ui: &mut egui::Ui) {
-        candlestick_chart(ui);
-        // egui::Window::new("Hello").show(ui.ctx(), |ui| {
-        //     ui.label("Hgello world");
-        // });
-    }
-
-    fn machine_config(&mut self, ui: &mut egui::Ui) {
-        ui.heading("Machine Configuration");
-        // let style = self.style.as_mut().unwrap();
-
-        ui.collapsing("Aesthetics", |ui| {
-            ui.separator();
-            ui.label("Edit shit here");
-            // ui.checkbox(&mut style.tabs_are_draggable, "Tabs are draggable");
-        });
-    }
-}
+// impl State<'_> {
+//     // The only things that should be stored here are styling / open_tabs related stuff
+//     // since the things that can be accessed from self, are very limited. Or we can store the financial
+//     // data here itself.
+// }
 
 pub struct Machine<'a> {
     state: State<'a>,
     tree: egui_dock::Tree<String>,
-    ping: Duration,
+    ping: i64,
 }
 
 impl Machine<'_> {
@@ -134,15 +98,15 @@ impl Default for Machine<'_> {
     // Default Layout
     fn default() -> Self {
         let mut tree = egui_dock::Tree::new(vec![
-            "Welcome".to_owned(),
-            "Machine Configuration".to_owned(),
+            CHART_TITLE.to_owned(),
+            SETTINGS_TITLE.to_owned(),
         ]);
         let [a, _b] = tree.split_left(
             egui_dock::NodeIndex::root(),
             0.4,
-            vec!["Orderbook".to_owned()],
+            vec![AGGR_TRADES_TITLE.to_owned()],
         );
-        let [_, _] = tree.split_below(a, 0.5, vec!["Portfolio".to_owned()]);
+        let [_, _] = tree.split_below(a, 0.5, vec![CHART_TITLE.to_owned()]);
         let mut open_tabs = HashSet::new();
         for node in tree.iter() {
             if let egui_dock::Node::Leaf { tabs, .. } = node {
@@ -156,14 +120,14 @@ impl Default for Machine<'_> {
         let (tx, rx) = std::sync::mpsc::channel();
 
         // Create a Hashmap of widgets
-        let aggr_trades_widget: Box<dyn Widget> =
-            Box::new(crate::widgets::aggr_trades::AggrTrades::default());
-        let chart_widget: Box<dyn Widget> = Box::new(crate::widgets::chart::Chart::default());
+        let aggr_trades_widget: Box<dyn Widget> = Box::new(widgets::aggr_trades::AggrTrades::default());
+        let chart_widget: Box<dyn Widget> = Box::new(widgets::chart::Chart::default());
+        let settings_widget: Box<dyn Widget> = Box::new(widgets::settings::Settings::default());
 
         let mut gizmos: HashMap<&str, Box<dyn Widget>> = HashMap::new();
-
         gizmos.insert(aggr_trades_widget.name(), aggr_trades_widget);
         gizmos.insert(chart_widget.name(), chart_widget);
+        gizmos.insert(settings_widget.name(), settings_widget);
 
         let state = State {
             open_tabs,
@@ -179,26 +143,24 @@ impl Default for Machine<'_> {
             liquidations: VecDeque::new(),
         };
 
-        let ping = Duration::zero();
-
-        Self { state, tree, ping }
+        Self { state, tree, ping: 0 }
     }
 }
 
 impl eframe::App for Machine<'_> {
-    #[cfg(feature = "persistence")]
-    fn save(&mut self, storage: &mut dyn eframe::Storage) {
-        eframe::set_value(storage, eframe::APP_KEY, &self.state);
-    }
+    // #[cfg(feature = "persistence")]
+    // fn save(&mut self, storage: &mut dyn eframe::Storage) {
+    //     eframe::set_value(storage, eframe::APP_KEY, &self.state);
+    // }
 
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         // Here's where we receive data from transmitter
         if let Ok(event) = self.state.rx.try_recv() {
-            // Grab the data before heading into the match arm
+            // Reformat the data into a flat structure.
             let exchange_time = event.exchange_time;
             let received_time = event.received_time;
             let ping = received_time - exchange_time;
-            self.ping = ping;
+            self.ping = ping.num_milliseconds();
             let exchange = format!("{}", event.exchange);
             let ticker = format!("{}-{}", event.instrument.base, event.instrument.quote);
             let instrument_type = event.instrument.kind;
@@ -262,7 +224,7 @@ impl eframe::App for Machine<'_> {
 
                 ui.menu_button("Widgets", |ui| {
                     // allow certain tabs to be toggled
-                    for tab in &["Welcome", "Portfolio"] {
+                    for tab in &["Settings", "Portfolio"] {
                         if ui
                             .selectable_label(self.state.open_tabs.contains(*tab), *tab)
                             .clicked()
@@ -298,7 +260,7 @@ impl eframe::App for Machine<'_> {
             ..Default::default()
         };
 
-        // Add the "workspaces feature here" > more deets in the README.md
+        // Add the "workspaces feature here" > more details in the README.md
         egui::TopBottomPanel::bottom("bottom_panel")
             .exact_height(25.)
             .resizable(false)
@@ -311,7 +273,7 @@ impl eframe::App for Machine<'_> {
                         self.state.lock_layout = !self.state.lock_layout;
                         println!("locked");
                     }
-                    ui.label(format!("{} ping", self.ping));
+                    ui.label(format!("{} ms", self.ping));
                 });
             });
 
