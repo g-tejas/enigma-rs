@@ -57,11 +57,12 @@ impl egui_dock::TabViewer for State<'_> {
 
     // when you right click a tab
     fn context_menu(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {
-        match tab.as_str() {
-            "Orderbook" => ui.label("You are pressing this from the orderbook widget"),
-            SETTINGS_TITLE => ui.label("You are pressing this from the settings widget"),
-            _ => ui.label("Hello"),
-        };
+        match self.gizmos.get_mut(tab.as_str()) {
+            Some(widget) => widget.context_menu(ui),
+            _ => {
+                ui.label("No context menu found");
+            }
+        }
     }
 
     fn title(&mut self, tab: &mut Self::Tab) -> egui::WidgetText {
@@ -173,6 +174,7 @@ impl eframe::App for Machine<'_> {
             let received_time = event.received_time;
             let ping = received_time - exchange_time;
             self.ping = ping.num_milliseconds();
+
             let exchange = format!("{}", event.exchange);
             let ticker = format!("{}-{}", event.instrument.base, event.instrument.quote);
             let instrument_type = event.instrument.kind;
@@ -190,7 +192,7 @@ impl eframe::App for Machine<'_> {
                     });
                 }
                 DataKind::Candle(candle) => {
-                    self.state.candles.push_front(Candle {
+                    self.state.candles.push_back(Candle {
                         exchange,
                         ticker,
                         instrument_type,
