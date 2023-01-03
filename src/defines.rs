@@ -13,6 +13,13 @@ pub mod fonts {
 }
 
 // ----------------------------------------------------------------------------
+// All widget related defintions are stored here.
+
+pub const AGGR_TRADES_TITLE: &str = "💰 Aggregated Trades";
+pub const SETTINGS_TITLE: &str = "⛭ Settings";
+pub const CHART_TITLE: &str = "📈 Chart";
+
+// ----------------------------------------------------------------------------
 
 #[allow(dead_code)]
 /// Might not need instrument type, since ticker will show that
