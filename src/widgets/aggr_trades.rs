@@ -1,5 +1,5 @@
-use crate::utils::get_trade;
-use barter_data::model::{DataKind, MarketEvent};
+use crate::defines::{Candle, Liquidation, Trade};
+use barter_data::model::{MarketEvent, OrderBook};
 use barter_integration::model::Side;
 use chrono::{DateTime, Utc};
 use eframe::egui;
@@ -29,8 +29,11 @@ impl super::Widget for AggrTrades {
     fn show(
         &mut self,
         ui: &mut egui::Ui,
-        trade_data: &mut VecDeque<MarketEvent>,
         tx: Sender<MarketEvent>,
+        trades: &mut VecDeque<Trade>,
+        candles: &mut VecDeque<Candle>,
+        orderbooks: &mut VecDeque<OrderBook>,
+        liquidations: &mut VecDeque<Liquidation>,
     ) {
         // Destructure the self into their fields.
         let Self { filter, show } = self;
@@ -62,27 +65,23 @@ impl super::Widget for AggrTrades {
         });
 
         // Table
-        let events = trade_data.iter().filter(|event| match event.kind {
-            DataKind::Trade(_) => true,
-            _ => false,
-        });
+        // let events = trades.iter().filter(|event| match event.kind {
+        //     DataKind::Trade(_) => true,
+        //     _ => false,
+        // });
 
         ui.separator();
-        let min = trade_data
+
+        let min = trades
             .iter()
-            .filter_map(|event| match &event.kind {
-                DataKind::Trade(trade) => Some(trade.quantity),
-                _ => None,
-            })
+            .filter_map(|trade| Some(trade.quantity))
             .fold(0.0, f64::min);
 
-        let max = trade_data
+        let max = trades
             .iter()
-            .filter_map(|event| match &event.kind {
-                DataKind::Trade(trade) => Some(trade.quantity),
-                _ => None,
-            })
+            .filter_map(|trade| Some(trade.quantity))
             .fold(0.0, f64::max);
+
         let range = max - min;
         let text_height = egui::TextStyle::Body.resolve(ui.style()).size;
 
@@ -117,8 +116,7 @@ impl super::Widget for AggrTrades {
                 });
             })
             .body(|mut body| {
-                for event in events {
-                    let trade = get_trade(event.clone()).unwrap();
+                for trade in trades {
                     if trade.quantity * trade.price > (*filter * 200).into() {
                         body.row(text_height, |mut row| {
                             row.col(|ui| {

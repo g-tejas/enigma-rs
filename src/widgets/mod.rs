@@ -1,6 +1,9 @@
 pub mod aggr_trades;
 pub mod chart;
-use barter_data::model::MarketEvent;
+
+use crate::defines::{Candle, Liquidation, Trade};
+use barter_data::model::{MarketEvent, OrderBook};
+use eframe::egui;
 use std::collections::VecDeque;
 use std::sync::mpsc::Sender;
 
@@ -14,8 +17,12 @@ pub trait Widget {
     /// Show windows, etc
     fn show(
         &mut self,
-        ui: &mut eframe::egui::Ui,
-        events: &mut VecDeque<MarketEvent>,
+        ui: &mut egui::Ui,
         tx: Sender<MarketEvent>,
+        trades: &mut VecDeque<Trade>,
+        candles: &mut VecDeque<Candle>,
+        orderbooks: &mut VecDeque<OrderBook>,
+        liquidations: &mut VecDeque<Liquidation>,
     );
 }
+// STOPPED HERE LAST NIGHT, I WANT IT TO ACCEPT GENERIC TYPES BUT ITS GIVING ME SOME OBJECT SAFETY SHIT

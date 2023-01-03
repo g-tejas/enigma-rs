@@ -1,5 +1,6 @@
-use crate::utils;
-use barter_data::model::{DataKind, MarketEvent};
+use crate::defines::{Candle, Liquidation, Trade};
+use barter_data::model::MarketEvent;
+use barter_data::model::OrderBook;
 use eframe::egui;
 use egui::{
     plot::{BoxElem, BoxPlot, BoxSpread},
@@ -29,8 +30,11 @@ impl super::Widget for Chart {
     fn show(
         &mut self,
         ui: &mut egui::Ui,
-        events: &mut VecDeque<MarketEvent>,
         tx: Sender<MarketEvent>,
+        trades: &mut VecDeque<Trade>,
+        candles: &mut VecDeque<Candle>,
+        orderbooks: &mut VecDeque<OrderBook>,
+        liquidations: &mut VecDeque<Liquidation>,
     ) {
         // Destructure self into fields
         let Self { ticker } = self;
@@ -62,17 +66,10 @@ impl super::Widget for Chart {
             })
             .collect();
 
-        // Filter the events to only get the candles
-        let events = events.iter().filter(|event| match event.kind {
-            DataKind::Candle(_) => true,
-            _ => false,
-        });
+        let mut candle_data: Vec<BoxElem> = Vec::new();
 
-        let mut candles: Vec<BoxElem> = Vec::new();
-
-        for (count, event) in events.enumerate() {
-            let candle = utils::get_candle(event.clone()).unwrap();
-            candles.push(
+        for (count, candle) in candles.iter().enumerate() {
+            candle_data.push(
                 BoxElem::new(
                     // candle.start_time.timestamp() as f64,
                     count as f64,
@@ -89,7 +86,7 @@ impl super::Widget for Chart {
                 .stroke(Stroke::new(2.0, egui::Color32::GREEN)),
             );
         }
-        let data = BoxPlot::new(candles);
+        let data = BoxPlot::new(candle_data);
 
         plot.show(ui, |plot_ui| {
             // plot_ui.line(egui::plot::Line::new(sin));
