@@ -1,7 +1,6 @@
 mod app;
 mod defines;
 mod gateway;
-mod plot;
 mod utils;
 mod widgets;
 use app::Machine;
