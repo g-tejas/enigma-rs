@@ -17,3 +17,9 @@ It's possible, you just have to run the async runtime off the main thread (becau
 Plan is to append to a VecDeque<BoxElem> or something.
 
 `28/12`: parasyte replied to my issue [here](https://github.com/parasyte/egui-tokio-example/issues/1). Basically, he suggested that in order to stop the spawned threads, u can simply pass in a "stop event" channel, that will listen for stop events. But leave this to the end, because, it's very unlikely we will hit any sort of performance issue this early. 
+
+
+# Todo List
+- [ ] Persistence, with serde. Make sure not to serialize the fields containing marketevents. There's some #[dont serialize] i think.
+- [ ] OHLCV is messed up, need to fix the x axis and stuff.
+`01/01`: Need to add
