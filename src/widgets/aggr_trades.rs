@@ -3,6 +3,7 @@ use barter_data::model::{MarketEvent, OrderBook};
 use barter_integration::model::Side;
 use chrono::{DateTime, Utc};
 use eframe::egui;
+use eframe::egui::Ui;
 use egui_extras::{Column, TableBuilder};
 use std::collections::VecDeque;
 use std::sync::mpsc::Sender;
@@ -173,14 +174,17 @@ impl super::Widget for AggrTrades {
                                 ui.label(layout_job);
                             });
                             row.col(|ui| {
-                                // ui.label(RichText::new("ProggyClean").)
-                                let now: DateTime<Utc> = Utc::now();
-                                let timestamp = now.format("%Y-%m-%d %H:%M:%S").to_string();
+                                let timestamp =
+                                    trade.exchange_time.format("%Y-%m-%d %H:%M:%S").to_string();
                                 ui.monospace(timestamp);
                             });
                         });
                     }
                 }
             });
+    }
+
+    fn context_menu(&self, ui: &mut Ui) {
+        ui.label("from aggr trades");
     }
 }
