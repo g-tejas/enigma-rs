@@ -1,5 +1,6 @@
 pub mod aggr_trades;
 pub mod chart;
+pub mod settings;
 
 use crate::defines::{Candle, Liquidation, Trade};
 use barter_data::model::{MarketEvent, OrderBook};
@@ -25,4 +26,3 @@ pub trait Widget {
         liquidations: &mut VecDeque<Liquidation>,
     );
 }
-// STOPPED HERE LAST NIGHT, I WANT IT TO ACCEPT GENERIC TYPES BUT ITS GIVING ME SOME OBJECT SAFETY SHIT

@@ -1,4 +1,4 @@
-use crate::defines::{Candle, Liquidation, Trade};
+use crate::defines::*;
 use barter_data::model::MarketEvent;
 use barter_data::model::OrderBook;
 use eframe::egui;
@@ -24,7 +24,7 @@ impl Default for Chart {
 #[allow(unused_variables)] // delete this later
 impl super::Widget for Chart {
     fn name(&self) -> &'static str {
-        "Chart"
+        CHART_TITLE
     }
 
     fn show(

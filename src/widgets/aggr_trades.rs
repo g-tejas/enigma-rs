@@ -1,4 +1,4 @@
-use crate::defines::{Candle, Liquidation, Trade};
+use crate::defines::*;
 use barter_data::model::{MarketEvent, OrderBook};
 use barter_integration::model::Side;
 use chrono::{DateTime, Utc};
@@ -23,7 +23,7 @@ impl Default for AggrTrades {
 
 impl super::Widget for AggrTrades {
     fn name(&self) -> &'static str {
-        "💸 Aggregated Trades"
+        AGGR_TRADES_TITLE
     }
 
     fn show(
