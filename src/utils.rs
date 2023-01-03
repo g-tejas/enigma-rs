@@ -17,24 +17,10 @@ pub fn configure_fonts(ctx: &egui::Context) {
     ctx.set_fonts(fonts);
 }
 
-pub fn split_ticker<'a>(input: &'a str) -> Result<(&'a str, &'a str), Error> {
+pub fn split_ticker(input: &str) -> Result<(&str, &str), Error> {
     let parts: Vec<&str> = input.split("-").collect();
     if parts.len() != 2 {
         panic!("Invalid ticker");
     }
     Ok((parts[0], parts[1]))
-}
-
-pub fn get_trade(event: MarketEvent) -> Option<PublicTrade> {
-    match event.kind {
-        DataKind::Trade(trade) => Some(trade),
-        _ => None,
-    }
-}
-
-pub fn get_candle(event: MarketEvent) -> Option<Candle> {
-    match event.kind {
-        DataKind::Candle(candle) => Some(candle),
-        _ => None,
-    }
 }
