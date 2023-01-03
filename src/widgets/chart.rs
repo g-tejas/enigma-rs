@@ -2,6 +2,8 @@ use crate::defines::*;
 use barter_data::model::MarketEvent;
 use barter_data::model::OrderBook;
 use eframe::egui;
+use eframe::egui::plot::{PlotPoint, PlotPoints};
+use eframe::egui::Ui;
 use egui::{
     plot::{BoxElem, BoxPlot, BoxSpread},
     Stroke,
@@ -67,8 +69,12 @@ impl super::Widget for Chart {
             .collect();
 
         let mut candle_data: Vec<BoxElem> = Vec::new();
+        let mut timeseries: Vec<[f64; 2]> = Vec::new();
 
+        // this shouldn't be done every time there's a new candle. should be done once
+        // in the try_recv loop.
         for (count, candle) in candles.iter().enumerate() {
+            timeseries.push([count as f64, candle.avg_price()]);
             candle_data.push(
                 BoxElem::new(
                     // candle.start_time.timestamp() as f64,
@@ -87,10 +93,15 @@ impl super::Widget for Chart {
             );
         }
         let data = BoxPlot::new(candle_data);
+        let timeseries_data = PlotPoints::from(timeseries);
 
         plot.show(ui, |plot_ui| {
-            // plot_ui.line(egui::plot::Line::new(sin));
-            plot_ui.box_plot(data);
+            plot_ui.line(egui::plot::Line::new(timeseries_data));
+            //plot_ui.box_plot(data);
         });
+    }
+
+    fn context_menu(&self, ui: &mut Ui) {
+        ui.label("from charts");
     }
 }
