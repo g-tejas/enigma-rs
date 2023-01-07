@@ -31,7 +31,9 @@ pub struct State<'a> {
     // Vector of pointers to a trait value Widget, might change to Hashmap
     trades: VecDeque<Trade>,
     candles: VecDeque<Candle>,
-    orderbooks: VecDeque<OrderBook>,
+    //orderbooks: VecDeque<OrderBook>,
+    best_bids: VecDeque<f32>,
+    best_asks: VecDeque<f32>,
     liquidations: VecDeque<Liquidation>,
 }
 
@@ -46,7 +48,8 @@ impl egui_dock::TabViewer for State<'_> {
                 self.tx.clone(),
                 &mut self.trades,
                 &mut self.candles,
-                &mut self.orderbooks,
+                &mut self.best_bids,
+                &mut self.best_asks,
                 &mut self.liquidations,
             ),
             _ => {
@@ -107,8 +110,7 @@ impl Machine<'_> {
 impl Default for Machine<'_> {
     // Default Layout
     fn default() -> Self {
-        let mut tree =
-            egui_dock::Tree::new(vec![CHART_TITLE.to_owned(), SETTINGS_TITLE.to_owned()]);
+        let mut tree = egui_dock::Tree::new(vec![DOM_TITLE.to_owned(), SETTINGS_TITLE.to_owned()]);
         let [a, _b] = tree.split_left(
             egui_dock::NodeIndex::root(),
             0.4,
@@ -132,11 +134,13 @@ impl Default for Machine<'_> {
             Box::new(widgets::aggr_trades::AggrTrades::default());
         let chart_widget: Box<dyn Widget> = Box::new(widgets::chart::Chart::default());
         let settings_widget: Box<dyn Widget> = Box::new(widgets::settings::Settings::default());
+        let dom_widget: Box<dyn Widget> = Box::new(widgets::dom::DepthOfMarket::default());
 
         let mut gizmos: HashMap<&str, Box<dyn Widget>> = HashMap::new();
         gizmos.insert(aggr_trades_widget.name(), aggr_trades_widget);
         gizmos.insert(chart_widget.name(), chart_widget);
         gizmos.insert(settings_widget.name(), settings_widget);
+        gizmos.insert(dom_widget.name(), dom_widget);
 
         let state = State {
             open_tabs,
@@ -148,7 +152,8 @@ impl Default for Machine<'_> {
             gizmos,
             trades: VecDeque::new(),
             candles: VecDeque::new(),
-            orderbooks: VecDeque::new(),
+            best_bids: VecDeque::new(),
+            best_asks: VecDeque::new(),
             liquidations: VecDeque::new(),
         };
 
@@ -207,7 +212,11 @@ impl eframe::App for Machine<'_> {
                     });
                 }
                 DataKind::OrderBook(orderbook) => {
-                    self.state.orderbooks.push_front(orderbook);
+                    let best_bid: f32 = orderbook.bids[0].price.clone() as f32;
+                    let best_ask: f32 = orderbook.asks[0].price.clone() as f32;
+                    self.state.best_bids.push_back(best_bid);
+                    //self.state.best_bids.truncate(50);
+                    self.state.best_asks.push_back(best_ask);
                 }
                 DataKind::Liquidation(liquidation) => {
                     self.state.liquidations.push_front(Liquidation {
