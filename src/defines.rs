@@ -18,6 +18,7 @@ pub mod fonts {
 pub const AGGR_TRADES_TITLE: &str = "💰 Aggregated Trades";
 pub const SETTINGS_TITLE: &str = "⛭ Settings";
 pub const CHART_TITLE: &str = "📈 Chart";
+pub const DOM_TITLE: &str = "🦈 Depth of Market";
 
 // ----------------------------------------------------------------------------
 
