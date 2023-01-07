@@ -35,7 +35,8 @@ impl super::Widget for Chart {
         tx: Sender<MarketEvent>,
         trades: &mut VecDeque<Trade>,
         candles: &mut VecDeque<Candle>,
-        orderbooks: &mut VecDeque<OrderBook>,
+        best_bids: &mut VecDeque<f32>,
+        best_asks: &mut VecDeque<f32>,
         liquidations: &mut VecDeque<Liquidation>,
     ) {
         // Destructure self into fields
@@ -67,7 +68,6 @@ impl super::Widget for Chart {
                 [x, x.sin()]
             })
             .collect();
-
         let mut candle_data: Vec<BoxElem> = Vec::new();
         let mut timeseries: Vec<[f64; 2]> = Vec::new();
 
@@ -99,6 +99,10 @@ impl super::Widget for Chart {
             plot_ui.line(egui::plot::Line::new(timeseries_data));
             //plot_ui.box_plot(data);
         });
+    }
+
+    fn settings(&mut self, ui: &mut egui::Ui) {
+        todo!()
     }
 
     fn context_menu(&self, ui: &mut Ui) {
