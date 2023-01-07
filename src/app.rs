@@ -23,11 +23,9 @@ pub struct State<'a> {
     tx: Sender<MarketEvent>,
     rx: Receiver<MarketEvent>,
 
-    // Data
-    events: VecDeque<MarketEvent>,
-
     // Widgets
     gizmos: HashMap<&'a str, Box<dyn Widget>>,
+
     // Vector of pointers to a trait value Widget, might change to Hashmap
     trades: VecDeque<Trade>,
     candles: VecDeque<Candle>,
@@ -111,11 +109,12 @@ impl Default for Machine<'_> {
     // Default Layout
     fn default() -> Self {
         let mut tree = egui_dock::Tree::new(vec![DOM_TITLE.to_owned(), SETTINGS_TITLE.to_owned()]);
-        let [a, _b] = tree.split_left(
+        let [a, b] = tree.split_left(
             egui_dock::NodeIndex::root(),
-            0.4,
+            0.2,
             vec![AGGR_TRADES_TITLE.to_owned()],
         );
+        let [_, _] = tree.split_below(b, 0.5, vec![AGGR_LIQS_TITLE.to_owned()]);
         let [_, _] = tree.split_below(a, 0.5, vec![CHART_TITLE.to_owned()]);
         let mut open_tabs = HashSet::new();
         for node in tree.iter() {
@@ -132,6 +131,8 @@ impl Default for Machine<'_> {
         // Create a Hashmap of widgets
         let aggr_trades_widget: Box<dyn Widget> =
             Box::new(widgets::aggr_trades::AggrTrades::default());
+        let aggr_liqs_widget: Box<dyn Widget> =
+            Box::new(widgets::aggr_liqs::AggrLiquidations::default());
         let chart_widget: Box<dyn Widget> = Box::new(widgets::chart::Chart::default());
         let settings_widget: Box<dyn Widget> = Box::new(widgets::settings::Settings::default());
         let dom_widget: Box<dyn Widget> = Box::new(widgets::dom::DepthOfMarket::default());
@@ -141,6 +142,7 @@ impl Default for Machine<'_> {
         gizmos.insert(chart_widget.name(), chart_widget);
         gizmos.insert(settings_widget.name(), settings_widget);
         gizmos.insert(dom_widget.name(), dom_widget);
+        gizmos.insert(aggr_liqs_widget.name(), aggr_liqs_widget);
 
         let state = State {
             open_tabs,
@@ -148,7 +150,6 @@ impl Default for Machine<'_> {
             lock_layout: false,
             tx,
             rx,
-            events: VecDeque::new(),
             gizmos,
             trades: VecDeque::new(),
             candles: VecDeque::new(),
