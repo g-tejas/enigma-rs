@@ -13,12 +13,13 @@ pub mod fonts {
 }
 
 // ----------------------------------------------------------------------------
-// All widget related defintions are stored here.
+// All widget related definitions are stored here.
 
 pub const AGGR_TRADES_TITLE: &str = "💰 Aggregated Trades";
 pub const SETTINGS_TITLE: &str = "⛭ Settings";
 pub const CHART_TITLE: &str = "📈 Chart";
 pub const DOM_TITLE: &str = "🦈 Depth of Market";
+pub const AGGR_LIQS_TITLE: &str = "🕱 Aggregated Liquidations";
 
 // ----------------------------------------------------------------------------
 
