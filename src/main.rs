@@ -22,10 +22,13 @@ fn main() {
         })
     });
 
-    let native_options = NativeOptions::default();
+    let window_options = NativeOptions {
+        maximized: true,
+        ..NativeOptions::default()
+    };
     run_native(
         defines::APP_NAME,
-        native_options,
+        window_options,
         Box::new(|cc| Box::new(Machine::new(cc))),
     )
 }
