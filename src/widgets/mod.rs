@@ -1,3 +1,4 @@
+pub mod aggr_liqs;
 pub mod aggr_trades;
 pub mod chart;
 pub mod dom;
@@ -29,7 +30,7 @@ pub trait Widget {
         liquidations: &mut VecDeque<Liquidation>,
     );
 
-    fn settings(&mut self, ui: &mut egui::Ui);
+    fn settings(&mut self, ui: &mut egui::Ui, tx: Sender<MarketEvent>);
 
     fn context_menu(&self, ui: &mut egui::Ui);
 }

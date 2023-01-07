@@ -14,6 +14,7 @@ use std::sync::mpsc::Sender;
 pub struct AggrTrades {
     pub filter: i32,
     pub show_settings: bool,
+
     // These are the input fields
     pub exchange: ExchangeId,
     pub ticker: String,
@@ -29,7 +30,7 @@ impl Default for AggrTrades {
             filter: 10,
             show_settings: true,
             exchange: ExchangeId::BinanceFuturesUsd,
-            ticker: "".to_string(),
+            ticker: String::new(),
             instrument_kind: InstrumentKind::FuturePerpetual,
             subscriptions: HashSet::new(),
         }
@@ -46,30 +47,24 @@ impl super::Widget for AggrTrades {
         ui: &mut egui::Ui,
         tx: Sender<MarketEvent>,
         trades: &mut VecDeque<Trade>,
-        candles: &mut VecDeque<Candle>,
-        best_bids: &mut VecDeque<f32>,
-        best_asks: &mut VecDeque<f32>,
-        liquidations: &mut VecDeque<Liquidation>,
+        _candles: &mut VecDeque<Candle>,
+        _best_bids: &mut VecDeque<f32>,
+        _best_asks: &mut VecDeque<f32>,
+        _liquidations: &mut VecDeque<Liquidation>,
     ) {
         ui.horizontal(|ui| {
-            if ui
-                .selectable_label(self.show_settings, "Configure Feeds")
-                .clicked()
-            {
-                self.show_settings = !self.show_settings;
-            }
-
-            if ui.button("Connect").clicked() {
-                println!("Connected to ticker feed");
-                crate::gateway::add_trades(tx, "BTC-USDT");
-            }
             ui.add(egui::Slider::new(&mut self.filter, 0..=100).text("Size"));
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
+                if ui.selectable_label(self.show_settings, "🛠").clicked() {
+                    self.show_settings = !self.show_settings;
+                }
+            });
         });
 
         ui.separator();
 
         if self.show_settings {
-            self.settings(ui);
+            self.settings(ui, tx);
         } else {
             let min = trades
                 .iter()
@@ -120,7 +115,7 @@ impl super::Widget for AggrTrades {
                             body.row(text_height, |mut row| {
                                 row.col(|ui| {
                                     let mut layout_job = egui::text::LayoutJob::default();
-                                    let text = "binance_futures_usd"; // need to change this to get from MarketEvent
+                                    let text = trade.exchange.as_str(); // need to change this to get from MarketEvent
                                     layout_job.append(
                                         &text,
                                         0.0,
@@ -173,7 +168,7 @@ impl super::Widget for AggrTrades {
                                 });
                                 row.col(|ui| {
                                     let timestamp =
-                                        trade.exchange_time.format("%Y-%m-%d %H:%M:%S").to_string();
+                                        trade.exchange_time.format("%H:%M:%S").to_string();
                                     ui.monospace(timestamp);
                                 });
                             });
@@ -183,7 +178,7 @@ impl super::Widget for AggrTrades {
         }
     }
 
-    fn settings(&mut self, ui: &mut egui::Ui) {
+    fn settings(&mut self, ui: &mut egui::Ui, tx: Sender<MarketEvent>) {
         ui.heading("Add feeds");
         egui::Grid::new("my_grid")
             .num_columns(2)
@@ -238,9 +233,11 @@ impl super::Widget for AggrTrades {
                     });
                 ui.end_row();
             });
-        if ui.button("Connect").clicked() {
+
+        // For connecting to the feeds.
+        if ui.button("Add to feed").clicked() {
             if let Ok((base, quote)) = crate::utils::split_ticker(self.ticker.as_str()) {
-                self.subscriptions.insert(Subscription {
+                let new_sub = Subscription {
                     exchange: self.exchange,
                     instrument: Instrument {
                         base: Symbol::new(base),
@@ -248,7 +245,11 @@ impl super::Widget for AggrTrades {
                         kind: self.instrument_kind,
                     },
                     kind: SubKind::Trade,
-                });
+                };
+                if !self.subscriptions.contains(&new_sub) {
+                    crate::gateway::add_stream(tx.clone(), new_sub.clone());
+                }
+                self.subscriptions.insert(new_sub);
             };
         }
         ui.separator();

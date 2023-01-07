@@ -31,11 +31,11 @@ impl super::Widget for DepthOfMarket {
         &mut self,
         ui: &mut Ui,
         tx: Sender<MarketEvent>,
-        trades: &mut VecDeque<Trade>,
-        candles: &mut VecDeque<Candle>,
+        _trades: &mut VecDeque<Trade>,
+        _candles: &mut VecDeque<Candle>,
         best_bids: &mut VecDeque<f32>,
         best_asks: &mut VecDeque<f32>,
-        liquidations: &mut VecDeque<Liquidation>,
+        _liquidations: &mut VecDeque<Liquidation>,
     ) {
         // Menu bar for configuring settings
         ui.horizontal(|ui| {
@@ -86,7 +86,7 @@ impl super::Widget for DepthOfMarket {
         //    .show(ui, |plot_ui| plot_ui.bar_chart(chart));
     }
 
-    fn settings(&mut self, ui: &mut egui::Ui) {
+    fn settings(&mut self, ui: &mut egui::Ui, tx: Sender<MarketEvent>) {
         todo!()
     }
 

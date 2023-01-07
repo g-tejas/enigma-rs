@@ -58,7 +58,7 @@ impl super::Widget for Settings {
         });
     }
 
-    fn settings(&mut self, ui: &mut eframe::egui::Ui) {
+    fn settings(&mut self, ui: &mut eframe::egui::Ui, tx: Sender<MarketEvent>) {
         todo!()
     }
 

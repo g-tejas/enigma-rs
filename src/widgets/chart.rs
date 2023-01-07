@@ -33,11 +33,11 @@ impl super::Widget for Chart {
         &mut self,
         ui: &mut egui::Ui,
         tx: Sender<MarketEvent>,
-        trades: &mut VecDeque<Trade>,
+        _trades: &mut VecDeque<Trade>,
         candles: &mut VecDeque<Candle>,
-        best_bids: &mut VecDeque<f32>,
-        best_asks: &mut VecDeque<f32>,
-        liquidations: &mut VecDeque<Liquidation>,
+        _best_bids: &mut VecDeque<f32>,
+        _best_asks: &mut VecDeque<f32>,
+        _liquidations: &mut VecDeque<Liquidation>,
     ) {
         // Destructure self into fields
         let Self { ticker } = self;
@@ -101,7 +101,7 @@ impl super::Widget for Chart {
         });
     }
 
-    fn settings(&mut self, ui: &mut egui::Ui) {
+    fn settings(&mut self, ui: &mut egui::Ui, tx: Sender<MarketEvent>) {
         todo!()
     }
 
