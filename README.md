@@ -22,9 +22,9 @@
     ·
     <a href="https://github.com/othneildrew/Best-README-Template/issues">Request Feature</a>
   </p>
+<img src="https://media1.tenor.com/images/589e7ed35c66cfda5a4d2ecf4c9559d0/tenor.gif?itemid=27442143">
 </div>
 
-<img src="https://media1.tenor.com/images/589e7ed35c66cfda5a4d2ecf4c9559d0/tenor.gif?itemid=27442143">
 
 ## Getting started
 Just clone it and run it brev it's easy.
