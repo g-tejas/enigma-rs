@@ -779,6 +779,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "egui-notify"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a3d8552204a0d12da822e54a1dbfdb5d78810b095773c139b6a7486e5a4ab8f6"
+dependencies = [
+ "egui",
+]
+
+[[package]]
 name = "egui-winit"
 version = "0.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -847,7 +856,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "enigma_machine"
+name = "enigma"
 version = "0.1.0"
 dependencies = [
  "barter-data",
@@ -855,6 +864,7 @@ dependencies = [
  "chrono",
  "csv",
  "eframe",
+ "egui-notify",
  "egui_dock",
  "egui_extras",
  "futures",

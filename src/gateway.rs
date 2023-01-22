@@ -48,6 +48,7 @@ pub fn add_ohlcv(tx: Sender<MarketEvent>, ticker: &'static str) {
                 let mut joined_stream = streams.join_map::<MarketEvent>().await;
 
                 while let Some((_exchange, event)) = joined_stream.next().await {
+                    println!("{:?}", event);
                     let _result = tx.send(event);
                 }
             }
@@ -74,6 +75,7 @@ pub fn add_orderbook(tx: Sender<MarketEvent>, ticker: &'static str) {
                 let mut joined_stream = streams.join_map::<MarketEvent>().await;
 
                 while let Some((_exchange, event)) = joined_stream.next().await {
+                    println!("{:?}", event);
                     let _result = tx.send(event);
                 }
             }

@@ -1,15 +1,16 @@
 use crate::defines::*;
 use crate::{
-    utils,
+    defines, utils,
     widgets::{self, Widget},
 };
-use barter_data::model::{DataKind, MarketEvent, OrderBook};
-use chrono::Duration;
+use barter_data::model::{DataKind, MarketEvent};
 use eframe::egui;
+use eframe::egui::plot::PlotPoint;
+use egui_notify::Toasts;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::mpsc::{Receiver, Sender};
+use std::time::Duration;
 
-// HashSet, so only unique widget names are stored.
 // TODO: Add unique identifier to widget names OrderBook::spot::BTCUSD for example.
 // This is so we can have multiple orderbooks up at the same time
 #[allow(dead_code)]
@@ -30,9 +31,14 @@ pub struct State<'a> {
     trades: VecDeque<Trade>,
     candles: VecDeque<Candle>,
     //orderbooks: VecDeque<OrderBook>,
-    best_bids: VecDeque<f32>,
-    best_asks: VecDeque<f32>,
+    best_bids: VecDeque<PlotPoint>,
+    best_asks: VecDeque<PlotPoint>,
     liquidations: VecDeque<Liquidation>,
+
+    // Notifications
+    toasts: Toasts,
+    events_tx: Sender<defines::SysEvent>,
+    events_rx: Receiver<defines::SysEvent>,
 }
 
 impl egui_dock::TabViewer for State<'_> {
@@ -44,6 +50,7 @@ impl egui_dock::TabViewer for State<'_> {
             Some(widget) => widget.show(
                 ui,
                 self.tx.clone(),
+                self.events_tx.clone(),
                 &mut self.trades,
                 &mut self.candles,
                 &mut self.best_bids,
@@ -99,7 +106,6 @@ impl Machine<'_> {
                 default.state = state;
             }
         }
-
         utils::configure_fonts(&cc.egui_ctx);
         default
     }
@@ -108,7 +114,10 @@ impl Machine<'_> {
 impl Default for Machine<'_> {
     // Default Layout
     fn default() -> Self {
-        let mut tree = egui_dock::Tree::new(vec![DOM_TITLE.to_owned(), SETTINGS_TITLE.to_owned()]);
+        let mut tree = egui_dock::Tree::new(vec![
+            MICROSTRUCTURE_TITLE.to_owned(),
+            SETTINGS_TITLE.to_owned(),
+        ]);
         let [a, b] = tree.split_left(
             egui_dock::NodeIndex::root(),
             0.2,
@@ -127,6 +136,7 @@ impl Default for Machine<'_> {
 
         // Create channel for different components to communicate
         let (tx, rx) = std::sync::mpsc::channel();
+        let (events_tx, events_rx) = std::sync::mpsc::channel();
 
         // Create a Hashmap of widgets
         let aggr_trades_widget: Box<dyn Widget> =
@@ -135,7 +145,8 @@ impl Default for Machine<'_> {
             Box::new(widgets::aggr_liqs::AggrLiquidations::default());
         let chart_widget: Box<dyn Widget> = Box::new(widgets::chart::Chart::default());
         let settings_widget: Box<dyn Widget> = Box::new(widgets::settings::Settings::default());
-        let dom_widget: Box<dyn Widget> = Box::new(widgets::dom::DepthOfMarket::default());
+        let dom_widget: Box<dyn Widget> =
+            Box::new(widgets::microstructure::MicrostructureBrowser::default());
 
         let mut gizmos: HashMap<&str, Box<dyn Widget>> = HashMap::new();
         gizmos.insert(aggr_trades_widget.name(), aggr_trades_widget);
@@ -156,6 +167,9 @@ impl Default for Machine<'_> {
             best_bids: VecDeque::new(),
             best_asks: VecDeque::new(),
             liquidations: VecDeque::new(),
+            toasts: Toasts::default(),
+            events_tx,
+            events_rx,
         };
 
         Self {
@@ -173,6 +187,14 @@ impl eframe::App for Machine<'_> {
     // }
 
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        if let Ok(sys_event) = self.state.events_rx.try_recv() {
+            self.state
+                .toasts
+                .success(sys_event.message)
+                .set_duration(Some(Duration::from_secs(2)))
+                .set_closable(true);
+        }
+        self.state.toasts.show(ctx);
         // Here's where we receive data from transmitter
         if let Ok(event) = self.state.rx.try_recv() {
             // Reformat the data into a flat structure.
@@ -213,11 +235,29 @@ impl eframe::App for Machine<'_> {
                     });
                 }
                 DataKind::OrderBook(orderbook) => {
-                    let best_bid: f32 = orderbook.bids[0].price.clone() as f32;
-                    let best_ask: f32 = orderbook.asks[0].price.clone() as f32;
-                    self.state.best_bids.push_back(best_bid);
-                    //self.state.best_bids.truncate(50);
-                    self.state.best_asks.push_back(best_ask);
+                    let best_bid: f64 = orderbook.bids[0].price.clone();
+                    let best_ask: f64 = orderbook.asks[0].price.clone();
+
+                    //let min_x: f64 = (exchange_time.timestamp() - 4000) as f64;
+
+                    self.state.best_bids.push_back(PlotPoint {
+                        x: exchange_time.timestamp_millis() as f64,
+                        y: best_bid,
+                    });
+                    self.state.best_asks.push_back(PlotPoint {
+                        x: exchange_time.timestamp_millis() as f64,
+                        y: best_ask,
+                    });
+
+                    //let mut i = 0;
+                    //while i < self.state.best_bids.len() {
+                    //    if self.state.best_bids[i][0] < min_x {
+                    //        self.state.best_bids.remove(i);
+                    //        self.state.best_asks.remove(i);
+                    //    } else {
+                    //        i += 1;
+                    //    }
+                    //}
                 }
                 DataKind::Liquidation(liquidation) => {
                     self.state.liquidations.push_front(Liquidation {

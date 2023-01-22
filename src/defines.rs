@@ -18,7 +18,7 @@ pub mod fonts {
 pub const AGGR_TRADES_TITLE: &str = "💰 Aggregated Trades";
 pub const SETTINGS_TITLE: &str = "⛭ Settings";
 pub const CHART_TITLE: &str = "📈 Chart";
-pub const DOM_TITLE: &str = "🦈 Depth of Market";
+pub const MICROSTRUCTURE_TITLE: &str = "🔭 Microstructure Browser";
 pub const AGGR_LIQS_TITLE: &str = "🕱 Aggregated Liquidations";
 
 // ----------------------------------------------------------------------------
@@ -66,4 +66,7 @@ pub struct Liquidation {
     pub price: f64,
     pub quantity: f64,
     pub time: DateTime<Utc>,
+}
+pub struct SysEvent {
+    pub message: String,
 }

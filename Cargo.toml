@@ -1,5 +1,5 @@
 [package]
-name = "enigma_machine"
+name = "enigma"
 version = "0.1.0"
 edition = "2021"
 
@@ -11,6 +11,7 @@ barter-integration = "0.4.1"
 chrono = "0.4.23"
 csv = "1.1.6"
 eframe = "0.20.1"
+egui-notify = "0.5.1"
 egui_dock = "0.3.1"
 egui_extras = "0.20.0"
 futures = "0.3.25"

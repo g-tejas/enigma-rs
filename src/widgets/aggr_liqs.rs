@@ -1,3 +1,4 @@
+use crate::defines;
 use crate::defines::*;
 use barter_data::{
     model::{
@@ -8,7 +9,9 @@ use barter_data::{
 };
 use barter_integration::model::{Instrument, InstrumentKind, Side, Symbol};
 use eframe::egui::{self, Ui};
+use egui::plot::PlotPoint;
 use egui_extras::{Column, TableBuilder};
+use egui_notify::Toasts;
 use std::collections::{HashSet, VecDeque};
 use std::sync::mpsc::Sender;
 
@@ -47,10 +50,11 @@ impl super::Widget for AggrLiquidations {
         &mut self,
         ui: &mut egui::Ui,
         tx: Sender<MarketEvent>,
-        _trades: &mut VecDeque<Trade>,
-        _candles: &mut VecDeque<Candle>,
-        _best_bids: &mut VecDeque<f32>,
-        _best_asks: &mut VecDeque<f32>,
+        events_tx: Sender<defines::SysEvent>,
+        trades: &mut VecDeque<Trade>,
+        candles: &mut VecDeque<Candle>,
+        best_bids: &mut VecDeque<PlotPoint>,
+        best_asks: &mut VecDeque<PlotPoint>,
         liquidations: &mut VecDeque<Liquidation>,
     ) {
         ui.horizontal(|ui| {
@@ -65,7 +69,7 @@ impl super::Widget for AggrLiquidations {
         ui.separator();
 
         if self.show_settings {
-            self.settings(ui, tx);
+            self.settings(ui, tx, events_tx);
         } else {
             let min = liquidations
                 .iter()
@@ -178,7 +182,12 @@ impl super::Widget for AggrLiquidations {
         }
     }
 
-    fn settings(&mut self, ui: &mut egui::Ui, tx: Sender<MarketEvent>) {
+    fn settings(
+        &mut self,
+        ui: &mut egui::Ui,
+        tx: Sender<MarketEvent>,
+        events_tx: Sender<SysEvent>,
+    ) {
         ui.heading("Add feeds");
         egui::Grid::new("Settings Grid")
             .num_columns(2)

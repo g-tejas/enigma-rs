@@ -1,3 +1,4 @@
+use crate::defines;
 use crate::defines::*;
 use barter_data::model::{
     subscription::{SubKind, Subscription},
@@ -7,6 +8,7 @@ use barter_data::ExchangeId;
 use barter_integration::model::{Instrument, InstrumentKind, Side, Symbol};
 use eframe::egui;
 use eframe::egui::Ui;
+use egui::plot::PlotPoint;
 use egui_extras::{Column, TableBuilder};
 use std::collections::{HashSet, VecDeque};
 use std::sync::mpsc::Sender;
@@ -46,11 +48,12 @@ impl super::Widget for AggrTrades {
         &mut self,
         ui: &mut egui::Ui,
         tx: Sender<MarketEvent>,
+        events_tx: Sender<defines::SysEvent>,
         trades: &mut VecDeque<Trade>,
-        _candles: &mut VecDeque<Candle>,
-        _best_bids: &mut VecDeque<f32>,
-        _best_asks: &mut VecDeque<f32>,
-        _liquidations: &mut VecDeque<Liquidation>,
+        candles: &mut VecDeque<Candle>,
+        best_bids: &mut VecDeque<PlotPoint>,
+        best_asks: &mut VecDeque<PlotPoint>,
+        liquidations: &mut VecDeque<Liquidation>,
     ) {
         ui.horizontal(|ui| {
             ui.add(egui::Slider::new(&mut self.filter, 0..=100).text("Size"));
@@ -64,16 +67,16 @@ impl super::Widget for AggrTrades {
         ui.separator();
 
         if self.show_settings {
-            self.settings(ui, tx);
+            self.settings(ui, tx, events_tx);
         } else {
             let min = trades
                 .iter()
-                .filter_map(|trade| Some(trade.quantity))
+                .map(|trade| trade.quantity)
                 .fold(0.0, f64::min);
 
             let max = trades
                 .iter()
-                .filter_map(|trade| Some(trade.quantity))
+                .map(|trade| trade.quantity)
                 .fold(0.0, f64::max);
 
             let range = max - min;
@@ -178,7 +181,12 @@ impl super::Widget for AggrTrades {
         }
     }
 
-    fn settings(&mut self, ui: &mut egui::Ui, tx: Sender<MarketEvent>) {
+    fn settings(
+        &mut self,
+        ui: &mut egui::Ui,
+        tx: Sender<MarketEvent>,
+        events_tx: Sender<SysEvent>,
+    ) {
         ui.heading("Add feeds");
         egui::Grid::new("my_grid")
             .num_columns(2)
@@ -236,6 +244,12 @@ impl super::Widget for AggrTrades {
 
         // For connecting to the feeds.
         if ui.button("Add to feed").clicked() {
+            events_tx
+                .send(SysEvent {
+                    message: format!("Subscribed to {} trades feed.", self.ticker),
+                })
+                .expect("TODO: panic message");
+
             if let Ok((base, quote)) = crate::utils::split_ticker(self.ticker.as_str()) {
                 let new_sub = Subscription {
                     exchange: self.exchange,

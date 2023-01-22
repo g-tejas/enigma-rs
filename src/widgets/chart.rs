@@ -1,3 +1,4 @@
+use crate::defines;
 use crate::defines::*;
 use barter_data::model::MarketEvent;
 use barter_data::model::OrderBook;
@@ -8,6 +9,7 @@ use egui::{
     plot::{BoxElem, BoxPlot, BoxSpread},
     Stroke,
 };
+use egui_notify::Toasts;
 use std::collections::VecDeque;
 use std::sync::mpsc::Sender;
 
@@ -33,11 +35,12 @@ impl super::Widget for Chart {
         &mut self,
         ui: &mut egui::Ui,
         tx: Sender<MarketEvent>,
-        _trades: &mut VecDeque<Trade>,
+        events_tx: Sender<defines::SysEvent>,
+        trades: &mut VecDeque<Trade>,
         candles: &mut VecDeque<Candle>,
-        _best_bids: &mut VecDeque<f32>,
-        _best_asks: &mut VecDeque<f32>,
-        _liquidations: &mut VecDeque<Liquidation>,
+        best_bids: &mut VecDeque<PlotPoint>,
+        best_asks: &mut VecDeque<PlotPoint>,
+        liquidations: &mut VecDeque<Liquidation>,
     ) {
         // Destructure self into fields
         let Self { ticker } = self;
@@ -101,7 +104,12 @@ impl super::Widget for Chart {
         });
     }
 
-    fn settings(&mut self, ui: &mut egui::Ui, tx: Sender<MarketEvent>) {
+    fn settings(
+        &mut self,
+        ui: &mut egui::Ui,
+        tx: Sender<MarketEvent>,
+        events_tx: Sender<SysEvent>,
+    ) {
         todo!()
     }
 
