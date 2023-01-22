@@ -13,7 +13,7 @@
 </a>
   <h2>enigma machine</h2>
 <p align="center"><i>
-    A high performance, multi-threaded, lock-free HFT systems monitoring GUI
+    A high performance, multi-threaded, lock-free HFT systems monitoring GUI - batteries included!
     </i><br />
     <br />
     <a href="https://github.com/othneildrew/Best-README-Template">View Demo</a>
@@ -25,9 +25,13 @@
 <img src="https://media1.tenor.com/images/589e7ed35c66cfda5a4d2ecf4c9559d0/tenor.gif?itemid=27442143">
 </div>
 
+* **Lock-free**: Lock-free data structures have significantly higher throughput (no contention) as well as lower latencies as compared to alternatives that use locks under periods of heavy load.
+* **Real-Time**: Barter-Data utilizes real-time WebSocket integrations enabling the consumption of normalised tick-by-tick data.
+* **Multithreaded**: Why not!
+
 
 ## Getting started
-Just clone it and run it brev it's easy.
+Just clone it and run it bro it's easy.
 ```rust
 cargo run
 ```
