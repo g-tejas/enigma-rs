@@ -25,9 +25,11 @@
   
   <figure>
     <img src="https://media1.tenor.com/images/589e7ed35c66cfda5a4d2ecf4c9559d0/tenor.gif?itemid=27442143">
+    <br>
     <figcaption><em>GIF is rendered at 10fps, can't upload larger size for some reason, but it's really much faster than how it looks here</em></figcaption>
   </figure>
-
+  <br>
+  <br>
 </div>
 
 * **Lock-free**: Lock-free data structures have significantly higher throughput (no contention) as well as lower latencies as compared to alternatives that use locks under periods of heavy load.
