@@ -33,21 +33,34 @@
 </div>
 
 * **Lock-free**: Lock-free data structures have significantly higher throughput (no contention) as well as lower latencies as compared to alternatives that use locks under periods of heavy load.
-* **Real-Time**: Barter-Data utilizes real-time WebSocket integrations enabling the consumption of normalised tick-by-tick data.
-* **Multithreaded**: Why not!
+* **Real-Time**: Utilizes Barter-Data with real-time WebSocket integrations enabling the consumption of normalised tick-by-tick data.
+* **Multithreaded**: Uses the **[fork-join model](https://en.wikipedia.org/wiki/Fork%E2%80%93join_model)** for delegating non-blocking market event streams into different worker threads.
+* **High-throughput**: Uses crossbeam's unbounded MPMC channel under the hood, benchmarked to support _10 million_ market events **per second**.
 
+## Technologies used
+- [Tokio](https://crates.io/crates/tokio) ([Tonic](https://github.com/hyperium/tonic) & [Tungstenite](https://github.com/snapview/tokio-tungstenite))
+- [Barter-data](https://crates.io/crates/barter-data)
+- [Barter-integration](https://crates.io/crates/barter-integration)
+- [egui](https://crates.io/crates/egui)
+- [futures](https://crates.io/crates/futures)
+- [Serde](https://serde.rs/)
 
 ## Getting started
-Just clone it and run it bro it's easy.
+Just clone it and run it bro it's easy. No more CMake shenanigans 😊.
 ```rust
 cargo run
 ```
 
 ## 🛣️ Roadmap
-### 🔔 Notifications
-We can add notifications too using [egui-notify](https://github.com/ItsEthra/egui-notify).
-### Tabs
-[This](https://discord.com/channels/900275882684477440/904461220592119849/1012443669451776041) is what I mean.
+- Tracing subscriber for debugging and async-aware diagnostics.
+- Notifications (PARTIALLY DONE): See [egui-notify branch](https://github.com/g-tejas/enigma/tree/egui-notify)
+- Tabs and Workspace functionality to preserve layouts for traders. [Like this](https://discord.com/channels/900275882684477440/904461220592119849/1012443669451776041) is what I mean.
+- Improve multi-threading by delegating and scheduling new jobs to pre-initialized worker thread pool.
+- More widgets: Look at the [widget branch](https://github.com/g-tejas/enigma/tree/master/src/widgets) for more deets. (e.g Liquidity heatmap, watchlist)
+- Especially this one
+
+https://user-images.githubusercontent.com/76802638/209623672-22191104-5f69-47c7-a359-19326c5f8c14.mp4
+
 
 ## 📚 Resources / Other stuff
 - [Naming conventions](https://rust-lang.github.io/api-guidelines/naming.html)
